@@ -1,0 +1,81 @@
+{
+  "settings": {
+    "default_scrape_interval_minutes": 60,
+    "min_delay_between_applications_seconds": 30,
+    "max_delay_between_applications_seconds": 90,
+    "max_jobs_per_target": 5
+  },
+  "targets": [
+    {
+      "name": "Anthropic Careers",
+      "type": "greenhouse",
+      "url": "https://boards.greenhouse.io/anthropic",
+      "enabled": true,
+      "role_keywords": [
+        "Python",
+        "Machine Learning",
+        "Deep Learning",
+        "AI",
+        "Computer Vision",
+        "Backend",
+        "Software Engineer",
+        "Research Engineer"
+      ]
+    },
+    {
+      "name": "Scale AI Careers",
+      "type": "greenhouse",
+      "url": "https://boards.greenhouse.io/scaleai",
+      "enabled": true,
+      "role_keywords": [
+        "Python",
+        "Machine Learning",
+        "Computer Vision",
+        "Data Engineer",
+        "Full Stack",
+        "Backend",
+        "Software Engineer"
+      ]
+    },
+    {
+      "name": "OpenAI Careers",
+      "type": "greenhouse",
+      "url": "https://boards.greenhouse.io/openai",
+      "enabled": true,
+      "role_keywords": [
+        "Python",
+        "Research",
+        "Software Engineer",
+        "Machine Learning",
+        "Platform",
+        "Deep Learning"
+      ]
+    },
+    {
+      "name": "Figma Careers",
+      "type": "lever",
+      "url": "https://jobs.lever.co/figma",
+      "enabled": true,
+      "role_keywords": [
+        "Software Engineer",
+        "Frontend",
+        "Mobile",
+        "Full Stack",
+        "Python"
+      ]
+    },
+    {
+      "name": "Synthetic Mock Board (Testing & Verification)",
+      "type": "mock",
+      "url": "https://example.com/careers/test-board",
+      "enabled": true,
+      "role_keywords": [
+        "Python",
+        "Machine Learning",
+        "Computer Vision",
+        "Flutter",
+        "Developer"
+      ]
+    }
+  ]
+}

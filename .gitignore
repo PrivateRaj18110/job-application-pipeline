@@ -1,0 +1,14 @@
+# Environment variables & API keys
+.env
+credentials.json
+sheet_local_backup.json
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Generated output files
+output/*.pdf
+output/*.md
+logs/
+
