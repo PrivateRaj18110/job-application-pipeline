@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous Job Discovery & Submission Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-section">
+        <div class="brand-logo">A</div>
+        <div>
+          <div class="brand-title">
+            AUTONOMOUS JOB PIPELINE
+            <span id="pipeline-status-pill" class="status-pill idle">
+              <span class="dot"></span>
+              <span id="pipeline-status-text">SYSTEM READY</span>
+            </span>
+          </div>
+          <div class="brand-subtitle" id="pipeline-step-text">Orchestrator ready for execution</div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="candidate-badge">
+          <div class="candidate-avatar">AR</div>
+          <div>
+            <div style="font-weight: 700; color: #fff;">Alex Rivera</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted);">Quant & ML Systems Engineer</div>
+          </div>
+        </div>
+
+        <div class="env-indicators">
+          <span id="env-llm" class="env-tag" title="Gemini LLM Engine">● Gemini API</span>
+          <span id="env-sheet" class="env-tag" title="Google Sheet State Check">● Google Sheet</span>
+          <span id="env-playwright" class="env-tag active" title="Playwright Chromium Installed">● Chromium</span>
+          <span id="env-auto-submit" class="env-tag" title="Auto-Submit Mode">● Auto-Submit</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-main">
+
+    <!-- Metrics Row -->
+    <section class="metrics-grid">
+      <div class="metric-card accent-blue">
+        <span class="metric-label">Tracked Positions</span>
+        <span class="metric-value" id="metric-total-jobs">0</span>
+        <span class="metric-sub" id="metric-total-sub">Total discovered roles</span>
+      </div>
+      <div class="metric-card accent-cyan">
+        <span class="metric-label">Resumes Tailored</span>
+        <span class="metric-value" id="metric-tailored">0</span>
+        <span class="metric-sub">Zero-hallucination PDFs compiled</span>
+      </div>
+      <div class="metric-card accent-green">
+        <span class="metric-label">Applications Submitted</span>
+        <span class="metric-value" id="metric-applied">0</span>
+        <span class="metric-sub" id="metric-applied-rate">Success rate: 100%</span>
+      </div>
+      <div class="metric-card accent-amber">
+        <span class="metric-label">Flagged / Verification</span>
+        <span class="metric-value" id="metric-flagged">0</span>
+        <span class="metric-sub">Manual check or complex form</span>
+      </div>
+    </section>
+
+    <!-- Visual Architecture Flowchart -->
+    <section class="pipeline-flow-card">
+      <div class="flow-card-header">
+        <div class="flow-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          END-TO-END PIPELINE ARCHITECTURE FLOW
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">
+          Confined strictly to workspace: <code style="color: var(--text-secondary);">c:/Users/Light/Documents/antigravity/lively-carson</code>
+        </div>
+      </div>
+
+      <div class="flow-steps-container">
+        <!-- Node 1 -->
+        <div class="flow-node" id="flow-node-scrape">
+          <span class="flow-node-badge">Step 1</span>
+          <div class="flow-node-title">Discovery Scraper</div>
+          <div class="flow-node-desc">Playwright scans Greenhouse/Lever boards via <code>targets.json</code></div>
+        </div>
+        
+        <div class="flow-connector">→</div>
+
+        <!-- Node 2 -->
+        <div class="flow-node" id="flow-node-dedup">
+          <span class="flow-node-badge">Step 2</span>
+          <div class="flow-node-title">Deduplication Check</div>
+          <div class="flow-node-desc">Verifies URL in Google Sheet / local cache to prevent duplicate applies</div>
+        </div>
+
+        <div class="flow-connector">→</div>
+
+        <!-- Node 3 -->
+        <div class="flow-node" id="flow-node-llm">
+          <span class="flow-node-badge">Step 3</span>
+          <div class="flow-node-title">LLM Tailoring Engine</div>
+          <div class="flow-node-desc">Gemini/OpenAI adapts master resume without hallucinations & builds PDF</div>
+        </div>
+
+        <div class="flow-connector">→</div>
+
+        <!-- Node 4 -->
+        <div class="flow-node" id="flow-node-apply">
+          <span class="flow-node-badge">Step 4</span>
+          <div class="flow-node-title">Playwright Apply Bot</div>
+          <div class="flow-node-desc">Human-like typing, PDF upload, consent handling & auto-submission</div>
+        </div>
+
+        <div class="flow-connector">→</div>
+
+        <!-- Node 5 -->
+        <div class="flow-node" id="flow-node-audit">
+          <span class="flow-node-badge">Step 5</span>
+          <div class="flow-node-title">Audit & Logging</div>
+          <div class="flow-node-desc">Saves timestamped status to Sheet & captures proof screenshots</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('control')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+        Control Center & Live Console
+      </button>
+      <button class="tab-btn" onclick="switchTab('jobs')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        Application Tracker
+        <span class="tab-badge" id="tab-jobs-count">0</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('gallery')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        Audit Screenshots Gallery
+        <span class="tab-badge" id="tab-gallery-count">0</span>
+      </button>
+      <button class="tab-btn" onclick="switchTab('targets')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+        Target Career Registry
+      </button>
+      <button class="tab-btn" onclick="switchTab('resume')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        Master Resume (Source of Truth)
+      </button>
+    </nav>
+
+    <!-- =========================================================
+         TAB 1: CONTROL CENTER & LIVE CONSOLE
+    ========================================================== -->
+    <div id="tab-control" class="tab-content active">
+      <div class="control-grid">
+        <!-- Runner Controls Column -->
+        <div class="control-panel">
+          <div class="card">
+            <div class="card-title">
+              <span>PIPELINE EXECUTION CONTROLS</span>
+            </div>
+
+            <!-- Single & Mock Trigger Buttons -->
+            <div class="action-buttons-group">
+              <button class="btn btn-primary" id="btn-run-once" onclick="triggerRun('single')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Execute Single Pass Run
+              </button>
+
+              <button class="btn btn-cyan" id="btn-run-mock" onclick="triggerRun('mock')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                Run Mock Test (Rapid Dry-Run)
+              </button>
+
+              <button class="btn btn-outline" id="btn-toggle-daemon" onclick="toggleDaemon()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                <span id="daemon-btn-label">Start Background Daemon</span>
+              </button>
+
+              <button class="btn btn-danger" id="btn-stop-run" onclick="stopRun()" style="display: none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12"></rect></svg>
+                Cancel Current Execution
+              </button>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1.25rem 0;">
+
+            <!-- Direct URL Target Runner -->
+            <div class="form-group">
+              <label class="form-label">DIRECT TARGET JOB URL</label>
+              <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="input-direct-url" class="form-input" style="flex: 1;" placeholder="https://boards.greenhouse.io/.../jobs/...">
+                <button class="btn btn-outline" onclick="triggerDirectUrl()" style="white-space: nowrap;">Apply Now</button>
+              </div>
+            </div>
+
+            <!-- Execution Options -->
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem;">
+              <label class="form-checkbox-label">
+                <input type="checkbox" id="chk-auto-submit" checked>
+                <span><strong>Auto-Submit Applications</strong> (clicks submit button)</span>
+              </label>
+              <label class="form-checkbox-label">
+                <input type="checkbox" id="chk-headless" checked>
+                <span><strong>Headless Browser</strong> (run silently in background)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Daemon Settings Card -->
+          <div class="card">
+            <div class="card-title">DAEMON SCHEDULER SETTINGS</div>
+            <div class="form-group">
+              <label class="form-label">Cycle Interval (Minutes)</label>
+              <input type="number" id="input-daemon-interval" class="form-input" value="60" min="5" max="1440">
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">
+              When active, the background daemon continuously cycles through all career targets in <code>targets.json</code>, dedupes against Google Sheets, auto-tailors resumes, and applies with randomized anti-bot delays.
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Terminal Stream Column -->
+        <div class="card console-card">
+          <div class="console-header">
+            <div style="display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 0.85rem;">
+              <span class="dot" style="background: var(--color-cyan); width: 8px; height: 8px; border-radius: 50%;"></span>
+              REAL-TIME PIPELINE CONSOLE (SSE STREAM)
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.85rem;">
+              <label class="form-checkbox-label" style="font-size: 0.75rem;">
+                <input type="checkbox" id="chk-autoscroll" checked> Auto-Scroll
+              </label>
+              <button class="btn btn-outline" onclick="clearConsole()" style="padding: 0.25rem 0.65rem; font-size: 0.75rem;">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <div class="console-body" id="console-stream">
+            <div class="log-entry">
+              <span class="log-time">--:--:--</span>
+              <span class="log-badge INFO">INIT</span>
+              <span class="log-msg">Visual dashboard console connected. Awaiting pipeline activity...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TAB 2: APPLICATION TRACKER TABLE
+    ========================================================== -->
+    <div id="tab-jobs" class="tab-content">
+      <div class="table-toolbar">
+        <div class="filter-pills">
+          <button class="filter-pill active" onclick="filterJobs('all')">All Positions (<span id="count-all">0</span>)</button>
+          <button class="filter-pill" onclick="filterJobs('applied')">Applied (<span id="count-applied">0</span>)</button>
+          <button class="filter-pill" onclick="filterJobs('tailored')">Tailored (<span id="count-tailored">0</span>)</button>
+          <button class="filter-pill" onclick="filterJobs('pending')">Pending (<span id="count-pending">0</span>)</button>
+          <button class="filter-pill" onclick="filterJobs('failed')">Needs Check (<span id="count-failed">0</span>)</button>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input type="text" id="input-search-jobs" class="form-input" placeholder="Search roles or companies..." oninput="searchJobs(this.value)">
+          <button class="btn btn-outline" onclick="loadJobsList()">Refresh</button>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="jobs-table">
+          <thead>
+            <tr>
+              <th style="width: 130px;">Date Found</th>
+              <th>Position & Role</th>
+              <th>Company</th>
+              <th>Target Board / URL</th>
+              <th style="width: 190px;">Status</th>
+              <th style="width: 200px;">Actions & Proof</th>
+            </tr>
+          </thead>
+          <tbody id="jobs-table-body">
+            <tr>
+              <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading tracked applications...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TAB 3: AUDIT SCREENSHOTS GALLERY
+    ========================================================== -->
+    <div id="tab-gallery" class="tab-content">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div style="font-size: 0.85rem; color: var(--text-secondary);">
+          Visual verification snapshots captured automatically by Playwright during form completion and final submission.
+        </div>
+        <button class="btn btn-outline" onclick="loadGallery()">Refresh Screenshots</button>
+      </div>
+
+      <div class="gallery-grid" id="gallery-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TAB 4: TARGET REGISTRY MANAGER
+    ========================================================== -->
+    <div id="tab-targets" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <span>CAREER BOARDS & ROLE FILTERS REGISTRY (<code>targets.json</code>)</span>
+          <div>
+            <button class="btn btn-primary" onclick="saveTargetsConfig()">Save Configuration</button>
+          </div>
+        </div>
+
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Configure the active company career boards, board engines (Greenhouse, Lever, Mock), and role keywords to discover and match against.
+        </p>
+
+        <textarea id="textarea-targets-json" class="form-input" style="width: 100%; height: 420px; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.4;"></textarea>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TAB 5: MASTER RESUME & PROFILE
+    ========================================================== -->
+    <div id="tab-resume" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <span>CANDIDATE MASTER RESUME (<code>master_resume.md</code>)</span>
+          <button class="btn btn-primary" onclick="saveMasterResume()">Save Master Resume</button>
+        </div>
+
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+          This markdown document serves as the absolute <strong>ground truth</strong> for all LLM resume tailoring. The pipeline strictly enforces a zero-hallucination policy and will never invent skills, dates, or experiences outside this profile.
+        </p>
+
+        <textarea id="textarea-resume-md" class="form-input" style="width: 100%; height: 500px; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.4;"></textarea>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- PDF Preview Modal -->
+  <div class="modal-overlay" id="pdf-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title" id="pdf-modal-title">Tailored Resume Preview</div>
+        <button class="modal-close-btn" onclick="closePdfModal()">&times;</button>
+      </div>
+      <div class="modal-content-area">
+        <iframe id="pdf-iframe" src="about:blank"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screenshot Preview Modal -->
+  <div class="modal-overlay" id="screenshot-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title" id="screenshot-modal-title">Playwright Audit Screenshot</div>
+        <button class="modal-close-btn" onclick="closeScreenshotModal()">&times;</button>
+      </div>
+      <div class="modal-content-area">
+        <img id="screenshot-img" src="" alt="Submission Screenshot">
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Box -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

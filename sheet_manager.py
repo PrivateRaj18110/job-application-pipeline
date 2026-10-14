@@ -231,6 +231,17 @@ class SheetManager:
         logger.warning("Job URL not found for status update: %s", job_url)
         return False
 
+    def get_all_jobs(self) -> List[Dict[str, Any]]:
+        """Retrieves all tracked jobs from Google Sheets or local backup."""
+        if self.worksheet:
+            try:
+                records = self.worksheet.get_all_records()
+                if records:
+                    return records
+            except Exception as e:
+                logger.error("Error reading records from Google Sheet: %s", e)
+        return self._read_local_data()
+
 
 # Singleton instance and standalone function bindings as specified in requirements
 _default_manager: Optional[SheetManager] = None
@@ -256,6 +267,11 @@ def log_new_job(job_dict: Dict[str, str]) -> bool:
 def update_status(job_url: str, new_status: str, resume_path: Optional[str] = None) -> bool:
     """Wrapper function conforming directly to project specification."""
     return get_manager().update_status(job_url, new_status, resume_path)
+
+
+def get_all_jobs() -> List[Dict[str, Any]]:
+    """Wrapper function to retrieve all logged jobs."""
+    return get_manager().get_all_jobs()
 
 
 if __name__ == "__main__":

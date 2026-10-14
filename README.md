@@ -106,6 +106,26 @@ python main.py --url "https://boards.greenhouse.io/<company>"
 
 ---
 
+## 🖥️ Local Visual Web Dashboard
+
+A complete, interactive single-page web dashboard is available for real-time visual orchestration, live terminal streaming, job tracking, and profile management.
+
+### Starting the Dashboard:
+```bash
+python -m uvicorn app:app --host 127.0.0.1 --port 8000
+```
+Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser.
+
+### Key Visual Features:
+1. **Interactive Architecture Flowchart**: Visual status indicators across all 5 milestones (Scraper $\rightarrow$ Sheet Deduplication $\rightarrow$ LLM Tailoring $\rightarrow$ Playwright Bot $\rightarrow$ Audit & Verification).
+2. **Control Center**: Single-click execution triggers for Single Pass Run, Mock Test Run, Direct Target URL Apply, or Background Daemon.
+3. **Live Streaming Terminal Console**: Real-time log streaming using Server-Sent Events (SSE) with color-coded syntax tags (`[LLM]`, `[APPLY]`, `[AUDIT]`, `[SKIP]`, `[OK]`).
+4. **Applications Tracker Table**: Filterable and searchable records with embedded **"View PDF"** modal preview and **"Screenshot"** proof buttons.
+5. **Visual Audit Gallery**: Grid of captured Playwright page verification screenshots.
+6. **In-Browser Editors**: Interactive editors for [`targets.json`](targets.json) and [`master_resume.md`](master_resume.md).
+
+---
+
 ## 📊 Google Sheet Schema
 
 | Column | Header | Description |
