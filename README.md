@@ -1,8 +1,97 @@
-# Automated Job Discovery, Resume Tailoring & Application Pipeline
+# 🤖 Autonomous Job Discovery, Resume Tailoring & Submission Pipeline
 
-A 100% fully automated, unattended background pipeline for job discovery, anti-hallucination resume tailoring, Google Sheets state tracking, and Playwright-driven application submission with anti-bot mitigations.
+A 100% fully automated, unattended background pipeline for multi-board job discovery, anti-hallucination LLM resume tailoring, Google Sheets state tracking, Playwright-driven application submission with anti-bot mitigations, and an interactive local visual web dashboard.
 
-Candidate Source of Truth: **Alex Rivera** (Quantitative Systems & Machine Learning Engineer).
+---
+
+## 🗺️ Visual Architecture Flow
+
+![Pipeline Architecture Flow](assets/screenshots/architecture_flow.svg)
+
+```mermaid
+flowchart LR
+    subgraph S1["1. Discovery Scraper"]
+        A["targets.json Registry"] --> B["Playwright Async Scraper"]
+        B --> C["Greenhouse & Lever Boards"]
+    end
+
+    subgraph S2["2. Deduplication"]
+        C --> D["sheet_manager.py"]
+        D -->|URL Exists?| E{Duplicate?}
+        E -->|Yes| Skip["Skip Registered Role"]
+        E -->|No| F["Log 'Pending Tailoring'"]
+    end
+
+    subgraph S3["3. LLM Engine"]
+        F --> G["resume_tailor.py"]
+        H["master_resume.md<br/>(Alex Rivera)"] --> G
+        G -->|Zero-Hallucination Prompt| I["Gemini 2.5 Flash / OpenAI"]
+        I --> J["Compile PDF in output/"]
+    end
+
+    subgraph S4["4. Submission Engine"]
+        J --> K["apply_bot.py"]
+        K --> L["Human Keystroke Emulation"]
+        K --> M["Upload Tailored PDF"]
+        K --> N["Consent & CAPTCHA Detection"]
+        K --> O["AUTO_SUBMIT Execution"]
+    end
+
+    subgraph S5["5. Audit & State"]
+        O --> P["Save Proof Screenshot"]
+        O --> Q["Update Google Sheet to 'Applied'"]
+        P --> R["Randomized Anti-Bot Pacing Delay"]
+    end
+```
+
+---
+
+## 🖥️ Local Visual Web Dashboard
+
+The pipeline includes a real-time web dashboard built with **FastAPI**, **vanilla JavaScript**, and **Server-Sent Events (SSE)**.
+
+### Starting the Dashboard:
+```bash
+python -m uvicorn app:app --host 127.0.0.1 --port 8000
+```
+Then open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser.
+
+---
+
+## 📸 Visual Dashboard Screenshots
+
+### 1. Control Center & Real-Time Streaming Console
+Live execution controls, architecture milestone progress, metric overview cards, and real-time Server-Sent Events (SSE) terminal streaming:
+
+![Dashboard Overview](assets/screenshots/dashboard_overview.png)
+
+---
+
+### 2. Application Tracker Table
+Full tracking table with search, filter tabs (`All`, `Applied`, `Tailored`, `Pending`, `Needs Check`), direct in-browser **"📄 View PDF"** resume modal, and **"🖼️ Screenshot"** proof modal:
+
+![Application Tracker](assets/screenshots/application_tracker.png)
+
+---
+
+### 3. Visual Audit Screenshots Gallery
+Proof cards for every application submission captured automatically by Playwright:
+
+![Audit Screenshots Gallery](assets/screenshots/audit_gallery.png)
+
+---
+
+### 4. Target Career Registry Editor (`targets.json`)
+Configure company career boards (Greenhouse, Lever, Mock) and targeted role keywords directly in the browser:
+
+![Target Registry](assets/screenshots/target_registry.png)
+
+---
+
+### 5. Playwright Submission Verification Proof
+Sample visual audit screenshot captured during automated form completion and submission:
+
+![Sample Submission Audit Proof](assets/screenshots/sample_audit_verification.png)
 
 ---
 
@@ -12,18 +101,20 @@ The codebase is strictly confined to `c:/Users/Light/Documents/antigravity/livel
 
 | File | Purpose | Key Technologies |
 |---|---|---|
-| [`targets.json`](file:///c:/Users/Light/Documents/antigravity/lively-carson/targets.json) | Central target registry containing job boards (Greenhouse, Lever, etc.), role keyword filters, and scrape intervals. | JSON configuration |
-| [`scheduler.py`](file:///c:/Users/Light/Documents/antigravity/lively-carson/scheduler.py) | Unattended background scheduler and execution loop. Handles rate-limiting delays (30–90s) between submissions. | Python `asyncio` |
-| [`main.py`](file:///c:/Users/Light/Documents/antigravity/lively-carson/main.py) | Master CLI entrypoint supporting `--daemon`, `--run-once`, `--mock`, and direct `--url` execution. | Python CLI |
-| [`scraper.py`](file:///c:/Users/Light/Documents/antigravity/lively-carson/scraper.py) | Discovers openings across Greenhouse, Lever, or generic job pages; matches against role keywords. | Playwright (Async) |
-| [`sheet_manager.py`](file:///c:/Users/Light/Documents/antigravity/lively-carson/sheet_manager.py) | Manages state & prevents duplicates. Reads & logs rows in Google Sheets. | `gspread`, `google-auth` |
-| [`resume_tailor.py`](file:///c:/Users/Light/Documents/antigravity/lively-carson/resume_tailor.py) | Tailors the master resume using a strict zero-hallucination system prompt. Exports PDF to `output/`. | `google-genai` (Gemini), `markdown-pdf` |
-| [`apply_bot.py`](file:///c:/Users/Light/Documents/antigravity/lively-carson/apply_bot.py) | Automated application submission engine. Fills inputs with human typing delays, uploads PDFs, checks consent, handles CAPTCHA/questionnaires, and logs visual audit screenshots to `logs/screenshots/`. | Playwright (Async) |
-| [`master_resume.md`](file:///c:/Users/Light/Documents/antigravity/lively-carson/master_resume.md) | Ground-truth candidate profile: Modern C++, Numba, PyTorch, MetaTrader 5 & FlatTrade APIs. | Markdown |
+| [`app.py`](app.py) | Local web server & real-time visual dashboard backend. | FastAPI, Uvicorn, SSE streaming |
+| [`static/`](static/) | Interactive frontend dashboard (HTML, CSS, JS). | HTML5, CSS3, ES6 JavaScript |
+| [`targets.json`](targets.json) | Central target registry containing job boards, role keyword filters, and scrape intervals. | JSON configuration |
+| [`scheduler.py`](scheduler.py) | Unattended background scheduler and execution loop. Handles randomized rate-limiting pacing (30–90s). | Python `asyncio` |
+| [`main.py`](main.py) | Master CLI entrypoint supporting `--daemon`, `--run-once`, `--mock`, and direct `--url` execution. | Python CLI |
+| [`scraper.py`](scraper.py) | Discovers openings across Greenhouse, Lever, or generic job pages; matches against role keywords. | Playwright (Async) |
+| [`sheet_manager.py`](sheet_manager.py) | Manages state & prevents duplicates. Reads & logs rows in Google Sheets or local fallback. | `gspread`, `google-auth` |
+| [`resume_tailor.py`](resume_tailor.py) | Tailors the master resume using a strict zero-hallucination system prompt. Exports PDF to `output/`. | `google-genai` (Gemini), `markdown-pdf` |
+| [`apply_bot.py`](apply_bot.py) | Automated application submission engine. Fills inputs with human typing delays, uploads PDFs, checks consent, handles CAPTCHA/questionnaires, and logs visual audit screenshots to `logs/screenshots/`. | Playwright (Async) |
+| [`master_resume.md`](master_resume.md) | Ground-truth candidate profile (**Alex Rivera**): C++, Numba, PyTorch, MetaTrader 5 & FlatTrade APIs. | Markdown |
 
 ---
 
-## 🛡️ Anti-Bot Mitigations & Error Handling
+## 🛡️ Anti-Bot Mitigations & Verification
 
 - **Human Keystroke Emulation**: Text fields are filled with randomized keystroke pacing (`delay=30–60ms`).
 - **Consent Checkboxes**: Automatically locates and toggles mandatory privacy/consent/terms checkboxes.
@@ -35,7 +126,13 @@ The codebase is strictly confined to `c:/Users/Light/Documents/antigravity/livel
 
 ## ⚙️ Setup & Configuration
 
-### 1. Configure Environment (`.env`)
+### 1. Install Dependencies
+```bash
+pip install -r requirements.txt
+playwright install chromium
+```
+
+### 2. Configure Environment (`.env`)
 ```ini
 # Google Gemini API Key
 GEMINI_API_KEY=your_gemini_api_key_here
@@ -51,8 +148,7 @@ AUTO_SUBMIT=false
 HEADLESS_BROWSER=true
 ```
 
-### 2. Configure Target Boards (`targets.json`)
-Add or customize target career boards and keyword filters in [`targets.json`](file:///c:/Users/Light/Documents/antigravity/lively-carson/targets.json):
+### 3. Configure Target Boards (`targets.json`)
 ```json
 {
   "settings": {
@@ -74,55 +170,32 @@ Add or customize target career boards and keyword filters in [`targets.json`](fi
 
 ---
 
-## 🚀 Running the System
+## 🚀 Execution Modes
 
-### 1. Immediate Single-Pass Automated Run
-Scans all enabled targets in `targets.json`, deduplicates, tailors resumes, submits applications, and updates Google Sheets:
+### 1. Launch Visual Dashboard (Recommended)
+```bash
+python -m uvicorn app:app --host 127.0.0.1 --port 8000
+```
+
+### 2. Single-Pass Automated Run (CLI)
 ```bash
 python main.py --run-once
 ```
 
-### 2. Continuous Unattended Background Daemon
-Runs on a scheduled interval (e.g. every 60 minutes) indefinitely:
+### 3. Continuous Unattended Daemon (CLI)
 ```bash
-python main.py --daemon
-```
-Custom interval (e.g. every 30 minutes):
-```bash
-python main.py --daemon --interval 30
+python main.py --daemon --interval 60
 ```
 
-### 3. Offline Verification / Mock Pass
-Test the entire discovery -> tailoring -> submission -> screenshot flow without hitting external sites:
+### 4. Offline Verification / Mock Dry-Run
 ```bash
 python main.py --run-once --mock
 ```
 
-### 4. Direct Single Target Run
-Target a specific job board directly:
+### 5. Direct Single Target Run
 ```bash
-python main.py --url "https://boards.greenhouse.io/<company>"
+python main.py --url "https://boards.greenhouse.io/<company>/jobs/<id>"
 ```
-
----
-
-## 🖥️ Local Visual Web Dashboard
-
-A complete, interactive single-page web dashboard is available for real-time visual orchestration, live terminal streaming, job tracking, and profile management.
-
-### Starting the Dashboard:
-```bash
-python -m uvicorn app:app --host 127.0.0.1 --port 8000
-```
-Open **[http://127.0.0.1:8000](http://127.0.0.1:8000)** in your browser.
-
-### Key Visual Features:
-1. **Interactive Architecture Flowchart**: Visual status indicators across all 5 milestones (Scraper $\rightarrow$ Sheet Deduplication $\rightarrow$ LLM Tailoring $\rightarrow$ Playwright Bot $\rightarrow$ Audit & Verification).
-2. **Control Center**: Single-click execution triggers for Single Pass Run, Mock Test Run, Direct Target URL Apply, or Background Daemon.
-3. **Live Streaming Terminal Console**: Real-time log streaming using Server-Sent Events (SSE) with color-coded syntax tags (`[LLM]`, `[APPLY]`, `[AUDIT]`, `[SKIP]`, `[OK]`).
-4. **Applications Tracker Table**: Filterable and searchable records with embedded **"View PDF"** modal preview and **"Screenshot"** proof buttons.
-5. **Visual Audit Gallery**: Grid of captured Playwright page verification screenshots.
-6. **In-Browser Editors**: Interactive editors for [`targets.json`](targets.json) and [`master_resume.md`](master_resume.md).
 
 ---
 
