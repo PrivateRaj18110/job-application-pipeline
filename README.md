@@ -113,7 +113,7 @@ The codebase is strictly confined to `c:/Users/Light/Documents/antigravity/livel
 | [`master_resume.md`](master_resume.md) | Ground-truth resume for LLM tailoring, generated from `cv.json` (Portfolio tab → Copy CV into Master Resume). | Markdown |
 | [`cv.json`](cv.json) | Structured CV (profile, skills with levels, projects, experience, education) that drives the portfolio site and cold emails. | JSON |
 | [`portfolio_builder.py`](portfolio_builder.py) | Builds the public portfolio site in `portfolio/` from `cv.json` and compiles the CV PDF it links and emails attach. | `markdown-pdf` |
-| [`portfolio/`](portfolio/) | Static visual CV website: skill meters, skill → project filter, project cards, experience timeline. Deployable to GitHub Pages. | HTML5, CSS3, ES6 JavaScript |
+| [`portfolio/`](portfolio/) | Static visual CV website: skill meters, skill → project filter, project cards, experience timeline. Published to its own public repo by [`publish_site.py`](publish_site.py). | HTML5, CSS3, ES6 JavaScript |
 | [`cold_emailer.py`](cold_emailer.py) | Cold outreach engine: contacts, zero-hallucination email drafts, SMTP sending with CV attached, threaded follow-ups, reply detection, daily caps. | `smtplib`, `imaplib`, Gemini / OpenAI |
 | [`research_copilot/`](research_copilot/) | RAG over project docs: redaction, heading-aware chunking, hybrid BM25 + embedding retrieval, local LLM answers, sentence grounding check, evaluation harness. | Ollama (Qwen2.5, nomic-embed-text), NumPy |
 
@@ -139,7 +139,7 @@ python portfolio_builder.py
 
 This writes `portfolio/cv.json`, compiles `portfolio/resume.pdf`, and stamps the page title and link-preview tags. Every project with a `slug` also gets a case-study page (`project.html?p=<slug>`) built from its `overview`, `gallery` (images in `portfolio/assets/projects/<slug>/`), `architecture` (drawn as a flow or layer diagram), `decisions` and `results`. Optional extras: `diagrams` (more flow/layer charts per project), `proof` (measured commits, lines of code, test files and an evidence list) and a top-level `system_map` that draws how the projects connect on the home page. Preview locally at **[http://127.0.0.1:8000/portfolio/](http://127.0.0.1:8000/portfolio/)** while the dashboard runs.
 
-**Publish free on GitHub Pages:** push the `portfolio/` folder, then set **Settings → Pages → Source: GitHub Actions**. [`.github/workflows/portfolio.yml`](.github/workflows/portfolio.yml) redeploys on every change. Put the live URL in `profile.links.portfolio` so cold emails link to it. The phone number stays off the public site unless `profile.show_phone` is `true`.
+**Publishing:** this repository is private; recruiters only see the site and the CV. [`publish_site.py`](publish_site.py) mirrors the built `portfolio/` folder into the public `PrivateRaj18110.github.io` repository (cloned into the gitignored `site_repo/`), and GitHub Pages serves it at https://privateraj18110.github.io/. Run `python portfolio_builder.py --sync-master --publish` after changing `cv.json`. `profile.links.portfolio` holds the live URL so the CV and cold emails link to it. The phone number stays off the public site unless `profile.show_phone` is `true`.
 
 ---
 

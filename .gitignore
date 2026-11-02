@@ -21,3 +21,6 @@ output/emails/
 # Research Copilot: private source paths and the local index (contains private doc text)
 copilot_sources.json
 copilot_index/
+
+# Local clone of the public site repo (published by publish_site.py)
+site_repo/

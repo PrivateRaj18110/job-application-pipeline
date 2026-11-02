@@ -7,6 +7,7 @@ and stamps the page title / link-preview metadata so shared links look right.
 Run with:
   python portfolio_builder.py                 # rebuild portfolio/ from cv.json
   python portfolio_builder.py --sync-master   # also regenerate master_resume.md from cv.json
+  python portfolio_builder.py --publish       # also publish portfolio/ to the public site repo
 """
 
 import re
@@ -238,6 +239,7 @@ def sync_master_resume(cv: Optional[Dict[str, Any]] = None) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Build the portfolio website from cv.json")
     parser.add_argument("--sync-master", action="store_true", help="Also regenerate master_resume.md from cv.json")
+    parser.add_argument("--publish", action="store_true", help="Also publish portfolio/ to the public site repository")
     args = parser.parse_args()
 
     try:
@@ -245,7 +247,10 @@ def main():
         print(f"Portfolio built at {PORTFOLIO_DIR} ({result['generated_at']})")
         if args.sync_master:
             print(f"Master resume regenerated: {sync_master_resume()}")
-    except (ValueError, FileNotFoundError, json.JSONDecodeError) as e:
+        if args.publish:
+            import publish_site
+            print(publish_site.publish())
+    except (ValueError, FileNotFoundError, RuntimeError, json.JSONDecodeError) as e:
         print(f"Build failed: {e}")
         sys.exit(1)
 

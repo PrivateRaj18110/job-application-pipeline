@@ -1,7 +1,7 @@
 # Raj Yadav
 **Python Backend & Applied AI Engineer**
 
-privateraj49@gmail.com | Mumbai, India | [Portfolio](https://privateraj18110.github.io/job-application-pipeline/) | [GitHub](https://github.com/PrivateRaj18110)
+privateraj49@gmail.com | Mumbai, India | [Portfolio](https://privateraj18110.github.io/) | [GitHub](https://github.com/PrivateRaj18110)
 
 MBA Tech (Finance) and Computer Engineering graduate from NMIMS Mumbai. I build end-to-end Python systems: FastAPI services, LLM-powered automation, event-driven platforms on Docker and Kubernetes, and rigorous quantitative research pipelines. Internships at Tata Capital and NTPC taught me the business side that the code serves. I build with AI coding agents (Claude Code, Codex) and own the design, review and verification of everything I ship.
 
@@ -25,13 +25,6 @@ Live: [https://algomatrics.in](https://algomatrics.in)
 - SaaS core: plans and billing through Razorpay / Stripe with GST, broker connections (Zerodha, Angel One, Flattrade, paper trading), risk limits and kill switches.
 - Strategy SDK with sandboxed uploads, semantic versioning, an approval workflow, and backtesting with bar replay, Monte Carlo and walk-forward.
 - Clean Architecture / DDD monorepo with 152 commits, deployable with one Docker Compose command or on Kubernetes.
-
-### Autonomous Job Application Pipeline
-*Tech Stack: Python, FastAPI, Playwright, LLM APIs, Prompt Engineering, GitHub Actions, AI coding agents*
-- Unattended pipeline that discovers jobs, tailors my resume with an LLM, applies through a browser bot and runs cold email outreach.
-- Gemini / OpenAI resume tailoring under a zero-hallucination prompt, compiled to PDF for every role.
-- Playwright apply bot with human-like typing, consent handling, CAPTCHA detection and a screenshot audit trail.
-- Cold email engine with threaded follow-ups, IMAP reply detection and daily send limits.
 
 ### Research Copilot (RAG + open-source LLM)
 *Tech Stack: RAG, Open-source LLMs (Ollama), Python, Prompt Engineering, Qwen2.5, nomic-embed-text, BM25, NumPy, FastAPI, AI coding agents*
