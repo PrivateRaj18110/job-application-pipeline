@@ -79,6 +79,10 @@ def validate_cv(cv: Dict[str, Any]) -> List[str]:
                 errors.append(f"Project slug '{slug}' is used more than once.")
             slugs.add(slug)
 
+    for item in (cv.get("resume") or {}).get("projects", []):
+        if item.get("slug") not in slugs:
+            errors.append(f"resume.projects refers to unknown project slug '{item.get('slug')}'.")
+
     return errors
 
 
@@ -169,6 +173,59 @@ def cv_to_markdown(cv: Dict[str, Any]) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _bare_url(url: str) -> str:
+    return re.sub(r"^https?://(www\.)?", "", url).rstrip("/")
+
+
+def cv_to_resume_markdown(cv: Dict[str, Any]) -> str:
+    """Renders the concise, ATS-friendly resume behind resume.pdf.
+
+    Uses the curated summary, skills and project bullets in cv.json's "resume" section with standard
+    section headings. Link text is the address itself, because ATS parsers keep the visible text, not
+    the hyperlink target. Without a "resume" section the full CV layout is used.
+    """
+    resume = cv.get("resume")
+    if not resume:
+        return cv_to_markdown(cv)
+    profile = cv.get("profile", {})
+
+    contact = [profile.get("location", ""), profile.get("email", "")]
+    if profile.get("show_phone") and profile.get("phone"):
+        contact.append(profile["phone"])
+    contact += [f"[{_bare_url(url)}]({url})" for url in profile.get("links", {}).values() if url]
+    lines = [f"# {profile.get('name', '')}", f"**{profile.get('title', '')}**", "", " | ".join(b for b in contact if b)]
+    lines += ["", "## Summary", resume.get("summary") or profile.get("summary", "")]
+    lines += ["", "## Skills"] + [f"- **{group['label']}:** {group['items']}" for group in resume.get("skills", [])]
+
+    projects = {p.get("slug"): p for p in cv.get("projects", [])}
+    lines += ["", "## Projects"]
+    for item in resume.get("projects", []):
+        project = projects.get(item["slug"], {})
+        live = (project.get("links") or {}).get("live")
+        lines += ["", f"### {item.get('title') or project.get('name', '')}" + (f" | [{_bare_url(live)}]({live})" if live else "")]
+        if item.get("stack"):
+            lines.append(f"*{item['stack']}*")
+        lines += [""] + [f"- {bullet}" for bullet in item.get("bullets", [])]
+
+    if cv.get("experience"):
+        lines += ["", "## Experience"]
+        for job in cv["experience"]:
+            period = " – ".join(p for p in (job.get("start"), job.get("end")) if p)
+            lines += ["", f"### {job.get('role', '')}, {job.get('company', '')} | {period}", ""]
+            lines += [f"- {h}" for h in job.get("highlights", [])[: resume.get("max_experience_bullets", 2)]]
+
+    if cv.get("education"):
+        lines += ["", "## Education"]
+        for edu in cv["education"]:
+            score = f" | {edu['score']}" if edu.get("score") else ""
+            lines += ["", f"**{edu.get('institution', '')}** | {edu.get('year', '')}  ", f"{edu.get('degree', '')}{score}"]
+
+    for heading, key in (("Certifications", "certifications"), ("Achievements", "achievements")):
+        if cv.get(key):
+            lines += ["", f"## {heading}", ""] + [f"- {item}" for item in cv[key]]
+    return "\n".join(lines).strip() + "\n"
+
+
 def _stamp_page_metadata(cv: Dict[str, Any]) -> None:
     """Writes the candidate's name and title into the static <title> and link-preview meta tags."""
     if not PORTFOLIO_INDEX_FILE.exists():
@@ -206,7 +263,7 @@ def build_portfolio(cv: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
 
     safe_name = re.sub(r"[^\w\-]", "_", cv["profile"]["name"])
     pdf_path = resume_tailor.convert_markdown_to_pdf(
-        cv_to_markdown(cv), output_filename=f"Resume_{safe_name}_Portfolio.pdf"
+        cv_to_resume_markdown(cv), output_filename=f"Resume_{safe_name}_Portfolio.pdf"
     )
     if pdf_path.endswith(".pdf"):
         shutil.copyfile(pdf_path, PORTFOLIO_PDF_FILE)

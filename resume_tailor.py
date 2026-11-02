@@ -25,6 +25,12 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_MASTER_RESUME_PATH = BASE_DIR / "master_resume.md"
 
+# Segoe UI ships with Windows and has no "fi"/"fl"/"ff" ligature glyphs. The PDF engine's default fonts
+# do, and ATS parsers then read "verification" as "veriﬁcation", so keyword searches miss it.
+PDF_FONT_DIR = Path(os.getenv("WINDIR", "C:/Windows")) / "Fonts"
+PDF_FONT_FACES = {"normal normal": "segoeui.ttf", "bold normal": "segoeuib.ttf",
+                  "normal italic": "segoeuii.ttf", "bold italic": "segoeuiz.ttf"}
+
 STRICT_SYSTEM_PROMPT = """You are an elite technical career coach and resume strategist.
 Your task is to take the candidate's MASTER RESUME and tailor it precisely for the provided JOB DESCRIPTION.
 
@@ -191,10 +197,35 @@ def tailor_resume(job_description: str, master_resume_text: Optional[str] = None
     return markdown_content
 
 
+def _render_pdf_with_ats_font(markdown_content: str, css: str, output_path: Path) -> bool:
+    """Renders Markdown to an A4 PDF in Segoe UI. Returns False when the font is not installed."""
+    if not all((PDF_FONT_DIR / f).exists() for f in PDF_FONT_FACES.values()):
+        return False
+    import pymupdf
+    from markdown_it import MarkdownIt
+
+    font_css = " ".join(
+        f"@font-face {{font-family: ResumeSans; src: url({file}); font-weight: {style.split()[0]}; font-style: {style.split()[1]};}}"
+        for style, file in PDF_FONT_FACES.items()
+    )
+    story = pymupdf.Story(MarkdownIt("commonmark").render(markdown_content), user_css=font_css + css,
+                          archive=pymupdf.Archive(str(PDF_FONT_DIR)))
+    page = pymupdf.paper_rect("a4")
+    writer = pymupdf.DocumentWriter(str(output_path))
+    more = True
+    while more:
+        device = writer.begin_page(page)
+        more, _ = story.place(page + (40, 34, -40, -34))
+        story.draw(device)
+        writer.end_page()
+    writer.close()
+    return True
+
+
 def convert_markdown_to_pdf(markdown_content: str, job_title: str = "Tailored", output_filename: Optional[str] = None) -> str:
     """
     Utility function converting tailored Markdown into a cleanly formatted PDF
-    saved in the local /output folder using markdown-pdf.
+    saved in the local /output folder (Segoe UI via PyMuPDF; markdown-pdf and ReportLab as fallbacks).
     """
     sanitized_title = re.sub(r"[^\w\-_]", "_", job_title)[:30]
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -209,17 +240,15 @@ def convert_markdown_to_pdf(markdown_content: str, job_title: str = "Tailored", 
     # Professional CSS Styling for Clean Resume Layout
     custom_css = """
     body {
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-family: ResumeSans, 'Helvetica Neue', Helvetica, Arial, sans-serif;
         font-size: 10pt;
         line-height: 1.35;
         color: #222222;
-        margin: 20px 30px;
     }
     h1 {
         font-size: 18pt;
         margin-bottom: 2px;
         color: #111111;
-        text-align: center;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -263,6 +292,14 @@ def convert_markdown_to_pdf(markdown_content: str, job_title: str = "Tailored", 
         text-decoration: none;
     }
     """
+
+    try:
+        if _render_pdf_with_ats_font(markdown_content, custom_css, output_path):
+            logger.info("Generated PDF successfully (Segoe UI): %s", output_path)
+            return str(output_path.resolve())
+        logger.warning("Segoe UI not found in %s; falling back to markdown-pdf (its fonts use ligatures).", PDF_FONT_DIR)
+    except Exception as e:
+        logger.warning("Segoe UI rendering failed (%s), falling back to markdown-pdf...", e)
 
     try:
         from markdown_pdf import MarkdownPdf, Section

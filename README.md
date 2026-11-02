@@ -164,6 +164,21 @@ python test_outreach.py                      # offline tests, never sends mail
 
 ---
 
+## 📄 ATS Resume Benchmark
+
+[`ats_benchmark.py`](ats_benchmark.py) collects real postings for the target roles from companies' public job-board feeds (Greenhouse, Lever, Ashby, and SmartRecruiters filtered to India), then reads a resume PDF the way an ATS parser does and scores it against every posting.
+
+- **Parsing checks:** pages, ligature glyphs that split words ("veriﬁcation"), email / phone / visible URLs in the header, standard section headings, images and tables.
+- **Keyword match:** about 80 skills with synonyms ("Google Cloud" counts as GCP); for each posting, the share of the skills it asks for that the resume names. Skills are only added to `cv.json` when the projects show them.
+- `resume.pdf` is rendered from `cv.json`'s `resume` section in Segoe UI, which has no ligature glyphs, with the addresses as visible link text.
+
+```bash
+python ats_benchmark.py collect                       # postings -> output/ats/postings.jsonl
+python ats_benchmark.py score portfolio/resume.pdf    # report -> output/ats/report_resume.md
+```
+
+---
+
 ## 🔎 Research Copilot (RAG + open-source LLM)
 
 Retrieval-augmented generation over your own project docs, answered by an open-source model running locally through [Ollama](https://ollama.com). Nothing leaves the machine. Ask questions in the **Research Copilot (RAG)** tab or from the CLI.

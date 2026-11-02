@@ -24,3 +24,6 @@ copilot_index/
 
 # Local clone of the public site repo (published by publish_site.py)
 site_repo/
+
+# ATS benchmark: collected job postings and reports (regenerated)
+output/ats/

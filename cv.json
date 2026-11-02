@@ -211,6 +211,92 @@
       "Ollama"
     ]
   },
+  "resume": {
+    "summary": "Python backend and applied AI engineer with a B.Tech in Computer Engineering and an MBA (Finance) from NMIMS Mumbai (2025). I build REST APIs with FastAPI, generative AI applications with LLMs, RAG and LLM evaluation, data pipelines, and event-driven systems on Docker, Kubernetes, AWS and GCP. I build with AI coding agents (Claude Code, Codex) and own the design, review and verification of everything I ship.",
+    "skills": [
+      {
+        "label": "AI & LLMs",
+        "items": "LLMs, Generative AI, RAG, LLM evaluation, prompt engineering, embeddings, vector search, open-source LLMs (Ollama), Anthropic Claude API, AI coding agents (Claude Code, Codex)"
+      },
+      {
+        "label": "Machine learning",
+        "items": "scikit-learn, XGBoost, LightGBM, statsmodels, SciPy, statistics (FDR / Holm testing, bootstrap, walk-forward validation)"
+      },
+      {
+        "label": "Backend & data",
+        "items": "Python, FastAPI, REST APIs, Pydantic, SQLAlchemy, SQL, PostgreSQL, Redis, DuckDB, pandas, NumPy, ETL / data pipelines, data modeling, event-driven systems"
+      },
+      {
+        "label": "Cloud & DevOps",
+        "items": "Docker, Kubernetes, AWS, GCP (Google Cloud), CI/CD (GitHub Actions), Linux, Git, pytest, Prometheus, Grafana"
+      },
+      {
+        "label": "Also",
+        "items": "C++20, CMake, TypeScript, React, Playwright, Power BI, Advanced Excel, SAP"
+      }
+    ],
+    "projects": [
+      {
+        "slug": "algo-matrics",
+        "title": "Algo Matrics: multi-tenant algorithmic trading SaaS",
+        "stack": "Python, FastAPI, PostgreSQL, Redis, Docker, Kubernetes, AWS, GCP, React, TypeScript, Claude API",
+        "bullets": [
+          "Built a multi-tenant SaaS with REST APIs in FastAPI: plans and billing (Razorpay / Stripe with GST), broker connections (Zerodha, Angel One, Flattrade), risk limits and kill switches.",
+          "Runs across AWS and Google Cloud: a GCP trading VM sends monitoring batches over HTTPS to the AWS platform; deploys with one Docker Compose command or on Kubernetes with KEDA / HPA autoscaling.",
+          "Clean Architecture / DDD monorepo with 152 commits, 219 test files and CI/CD in GitHub Actions; 330 ops-backend, 440 platform and 118 frontend tests passing (Sep 2026).",
+          "AI layer: an assistant on the Claude API that answers only from figures in its context, and an AI-CIO forecast whose top-10 hit rate reached 27.8% against an 8.2% base rate (3.4x lift) in backtest."
+        ]
+      },
+      {
+        "slug": "research-copilot",
+        "title": "Research Copilot: RAG with a local open-source LLM",
+        "stack": "Python, Ollama, Qwen2.5, nomic-embed-text, BM25, NumPy, FastAPI",
+        "bullets": [
+          "Built retrieval-augmented generation over 299 project documents (5,126 chunks): hybrid retrieval combining BM25 and dense vector search over embeddings with reciprocal rank fusion, answered by Qwen2.5 running locally.",
+          "Wrote an LLM evaluation harness on labelled questions: retrieval hit@5 100%, MRR 0.71, 64% of expected facts present, 2 of 2 off-topic questions refused.",
+          "Added a grounding check that cites each answer sentence to its source passage and flags unsupported ones (92% of sentences grounded on average); secrets are redacted before indexing."
+        ]
+      },
+      {
+        "slug": "intraday-research",
+        "title": "Intraday Research Lab: ML research on NSE options",
+        "stack": "Python, pandas, scikit-learn, XGBoost, SciPy, Linux, GCP",
+        "bullets": [
+          "Built data pipelines that rebuild 30-second and 1-minute candles from raw ticks, and engineered 1,705 features tested with walk-forward validation, FDR / Holm multiple-testing control and explicit trading costs.",
+          "Ran a paper-trading runtime on a Google Cloud Linux VM; when the best strategy's edge (+₹15 per trade) turned negative at the measured 733 ms execution delay, the research recommended committing no capital.",
+          "330,000+ lines of Python and C++ across 1,458 files, with 355 test files."
+        ]
+      },
+      {
+        "slug": "lls",
+        "title": "LLS: low-latency trading infrastructure in C++20",
+        "stack": "C++20, CMake, Python",
+        "bullets": [
+          "Lock-free SPSC ring-buffer pipeline from the market feed to a preallocated market-state engine with zero-copy snapshots.",
+          "C++ ML stack with purged walk-forward splits, leakage detection, tree ensembles, TCN / CNN1D models and a zero-allocation inference engine.",
+          "A differential oracle proves the C++ port reproduces the Python strategy exactly; 214 source and 98 test files with ASan / UBSan builds."
+        ]
+      },
+      {
+        "slug": "rqie",
+        "title": "RQIE: quantitative research engine",
+        "stack": "Python, DuckDB, pandas, statsmodels, scikit-learn",
+        "bullets": [
+          "Pre-registered experiments across 27 sessions of NSE option data, on a DuckDB data store with per-session verification and an independent store audit.",
+          "An execution-cost model and delay stress tests showed no edge survived real trading costs (statutory charges about 0.24% per trade), so none was claimed."
+        ]
+      },
+      {
+        "slug": "studypilot",
+        "title": "StudyPilot: offline-first study app",
+        "stack": "React, TypeScript, PostgreSQL (Supabase), PWA",
+        "bullets": [
+          "Live app covering 9 textbooks, 256 topics and 1,232 practice questions, with timed papers that save every answer and submit exactly once.",
+          "Offline-first: an IndexedDB outbox with idempotency keys syncs finished work when the connection returns."
+        ]
+      }
+    ]
+  },
   "projects": [
     {
       "name": "Algo Matrics Platform",
