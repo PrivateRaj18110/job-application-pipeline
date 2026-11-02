@@ -31,3 +31,6 @@ output/ats/
 # Private tracker: your stages and notes per company
 tracker.json
 tracker.json.tmp
+
+# Application run: employer triage and per-application records (personal data)
+output/applications/

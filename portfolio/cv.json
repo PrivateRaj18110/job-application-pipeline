@@ -4,7 +4,7 @@
     "title": "Python Backend & Applied AI Engineer",
     "tagline": "I build Python backends, LLM-powered automation and event-driven systems, with a finance background to match.",
     "location": "Mumbai, India",
-    "email": "privateraj49@gmail.com",
+    "email": "rajydv141@gmail.com",
     "show_phone": false,
     "date_of_birth": "08/04/2002",
     "links": {
@@ -1202,5 +1202,5 @@
     ],
     "note": "Arrows show how data moves. The LIVE runtime trades on paper, and LLS routes no real orders. The VM1 → algomatrics.in link and the LLS export contract were built and verified end to end before release."
   },
-  "generated_at": "2026-11-02 23:55"
+  "generated_at": "2026-11-03 01:14"
 }

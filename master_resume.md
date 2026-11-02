@@ -1,7 +1,7 @@
 # Raj Yadav
 **Python Backend & Applied AI Engineer**
 
-privateraj49@gmail.com | Mumbai, India | [Portfolio](https://privateraj18110.github.io/) | [GitHub](https://github.com/PrivateRaj18110)
+rajydv141@gmail.com | Mumbai, India | [Portfolio](https://privateraj18110.github.io/) | [GitHub](https://github.com/PrivateRaj18110)
 
 MBA Tech (Finance) and Computer Engineering graduate from NMIMS Mumbai. I build end-to-end Python systems: FastAPI services, LLM-powered automation, event-driven platforms on Docker and Kubernetes, and rigorous quantitative research pipelines. Internships at Tata Capital and NTPC taught me the business side that the code serves. I build with AI coding agents (Claude Code, Codex) and own the design, review and verification of everything I ship.
 
