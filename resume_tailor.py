@@ -245,6 +245,13 @@ def _render_pdf_with_ats_font(markdown_content: str, css: str, output_path: Path
         story.draw(device)
         writer.end_page()
     writer.close()
+
+    # Embed only the glyphs used: the full font files make a ~2.5 MB PDF, over many application forms' 2 MB limit
+    doc = pymupdf.open(str(output_path))
+    doc.subset_fonts()
+    data = doc.tobytes(garbage=4, deflate=True)
+    doc.close()
+    output_path.write_bytes(data)
     return True
 
 
