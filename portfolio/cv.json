@@ -12,7 +12,7 @@
       "linkedin": "",
       "github": "https://github.com/PrivateRaj18110"
     },
-    "summary": "MBA Tech (Finance) and Computer Engineering graduate from NMIMS Mumbai. I build end-to-end Python systems: FastAPI services, LLM-powered automation, event-driven platforms on Docker and Kubernetes, and rigorous quantitative research pipelines. Internships at Tata Capital and NTPC taught me the business side that the code serves.",
+    "summary": "MBA Tech (Finance) and Computer Engineering graduate from NMIMS Mumbai. I build end-to-end Python systems: FastAPI services, LLM-powered automation, event-driven platforms on Docker and Kubernetes, and rigorous quantitative research pipelines. Internships at Tata Capital and NTPC taught me the business side that the code serves. I build with AI coding agents (Claude Code, Codex) and own the design, review and verification of everything I ship.",
     "open_to": [
       "Applied / Generative AI Engineer",
       "LLM & AI Agent Developer",
@@ -68,6 +68,9 @@
         },
         {
           "name": "Open-source LLMs (Ollama)"
+        },
+        {
+          "name": "AI coding agents"
         },
         {
           "name": "Prompt Engineering"
@@ -176,6 +179,37 @@
       ]
     }
   ],
+  "how_i_build": {
+    "title": "How I build",
+    "intro": "I build with AI coding agents. I decide what to build and how it should work, the agents write most of the code, and nothing ships until I have reviewed it and tests, evaluations or audits back it up.",
+    "steps": [
+      {
+        "label": "Design",
+        "detail": "I set the architecture, the data flow and the rules the code must follow, and write them down as specs and project rules the agents work from."
+      },
+      {
+        "label": "Direct the agents",
+        "detail": "Claude Code and Codex write and refactor most of the code, one scoped task at a time. Changes to live trading code need my explicit approval."
+      },
+      {
+        "label": "Verify",
+        "detail": "I check every change before I trust it: unit tests, a differential oracle against a reference implementation, evaluation sets and read-only audits of the live system."
+      },
+      {
+        "label": "Measure honestly",
+        "detail": "I publish what the measurements show, failures included: code counts on this site exclude copies and snapshots, and the Research Copilot page lists its wrong answers."
+      },
+      {
+        "label": "Keep private data local",
+        "detail": "For private documents I run open-source models on my own laptop through Ollama, so nothing leaves the machine."
+      }
+    ],
+    "tools": [
+      "Claude Code",
+      "Codex",
+      "Ollama"
+    ]
+  },
   "projects": [
     {
       "name": "Algo Matrics Platform",
@@ -195,7 +229,8 @@
         "GitHub Actions",
         "React",
         "TypeScript",
-        "LLM APIs"
+        "LLM APIs",
+        "AI coding agents"
       ],
       "highlights": [
         "SaaS core: plans and billing through Razorpay / Stripe with GST, broker connections (Zerodha, Angel One, Flattrade, paper trading), risk limits and kill switches.",
@@ -349,7 +384,8 @@
         "Playwright",
         "LLM APIs",
         "Prompt Engineering",
-        "GitHub Actions"
+        "GitHub Actions",
+        "AI coding agents"
       ],
       "highlights": [
         "Gemini / OpenAI resume tailoring under a zero-hallucination prompt, compiled to PDF for every role.",
@@ -463,7 +499,8 @@
         "nomic-embed-text",
         "BM25",
         "NumPy",
-        "FastAPI"
+        "FastAPI",
+        "AI coding agents"
       ],
       "highlights": [
         "Hybrid retrieval (BM25 + 768-dimensional dense embeddings, fused with reciprocal rank fusion) over 5,126 heading-aware chunks.",
@@ -571,7 +608,8 @@
         "Supabase",
         "Vite",
         "Tailwind CSS",
-        "PWA"
+        "PWA",
+        "AI coding agents"
       ],
       "highlights": [
         "Follows 9 school textbooks across 7 subjects: 256 topics, 219 lessons and 1,232 practice questions, all marked as drafts until a teacher reviews them.",
@@ -661,7 +699,8 @@
         "Python",
         "pandas",
         "Machine Learning",
-        "Linux"
+        "Linux",
+        "AI coding agents"
       ],
       "highlights": [
         "Confidence-driven entry / exit research with walk-forward out-of-sample reporting, random baselines and cost sweeps.",
@@ -733,7 +772,7 @@
       ],
       "proof": {
         "evidence": [
-          "330,000+ lines of original code in 1,458 files, counted strictly: exact copies, backups, before/after snapshots, incident copies, bundled third-party libraries and virtual environments excluded, and one version of each file name kept.",
+          "330,000+ lines of code in 1,458 files, built with AI coding agents under my direction and counted strictly: exact copies, backups, before/after snapshots, incident copies, bundled third-party libraries and virtual environments excluded, and one version of each file name kept.",
           "Every chart and dashboard on this page was generated by the research engines in the repository.",
           "Live-runtime incidents are investigated read-only on the Google Cloud VM, with an evidence manifest and SHA-256-hashed sources for every finding."
         ],
@@ -760,7 +799,8 @@
         "C++20",
         "CMake",
         "Python",
-        "Machine Learning"
+        "Machine Learning",
+        "AI coding agents"
       ],
       "highlights": [
         "Lock-free SPSC ring-buffer pipeline from feed to a preallocated market-state engine with zero-copy snapshots.",
@@ -881,7 +921,8 @@
         "Python",
         "pandas",
         "DuckDB",
-        "Machine Learning"
+        "Machine Learning",
+        "AI coding agents"
       ],
       "highlights": [
         "Pre-registered experiments on option-quote imbalance across 27 sessions, reporting a consistent but economically negligible effect honestly.",
@@ -1177,5 +1218,5 @@
     ],
     "note": "Arrows show how data moves. The LIVE runtime trades on paper, and LLS routes no real orders. The VM1 → algomatrics.in link and the LLS export contract were built and verified end to end before release."
   },
-  "generated_at": "2026-11-02 20:59"
+  "generated_at": "2026-11-02 21:07"
 }

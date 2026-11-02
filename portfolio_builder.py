@@ -111,6 +111,12 @@ def cv_to_markdown(cv: Dict[str, Any]) -> str:
     if profile.get("summary"):
         lines += ["", profile["summary"]]
 
+    how = cv.get("how_i_build") or {}
+    if how.get("intro"):
+        lines += ["", "## How I Build", how["intro"]]
+        if how.get("tools"):
+            lines.append(f"*Tools: {', '.join(how['tools'])}*")
+
     if cv.get("skills"):
         lines += ["", "## Technical Skills"]
         for group in cv["skills"]:

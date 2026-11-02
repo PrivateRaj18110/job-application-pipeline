@@ -50,6 +50,7 @@ function renderAll() {
   renderNav();
   renderHero();
   renderSkills();
+  renderHowIBuild();
   renderProjectFilters();
   renderProjects();
   renderSystemMap();
@@ -162,6 +163,23 @@ function renderSkills() {
       if (activeSkill) document.getElementById('projects').scrollIntoView({ behavior: 'smooth' });
     });
   });
+}
+
+function renderHowIBuild() {
+  const how = cv.how_i_build;
+  if (!how || !(how.steps || []).length) return;
+  document.getElementById('how-i-build').hidden = false;
+  if (how.title) document.getElementById('build-title').textContent = how.title;
+  document.getElementById('build-intro').textContent = how.intro || '';
+  document.getElementById('build-steps').innerHTML = how.steps.map((s, i) => `
+    <li class="diagram-node">
+      <span class="diagram-step" aria-hidden="true">${i + 1}</span>
+      <strong>${esc(s.label)}</strong>
+      <span>${esc(s.detail)}</span>
+    </li>`).join('');
+  document.getElementById('build-tools').innerHTML = (how.tools || []).length
+    ? `<span>Tools</span>${how.tools.map(t => `<span class="chip tech">${esc(t)}</span>`).join('')}`
+    : '';
 }
 
 function renderProjectFilters() {
