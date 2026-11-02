@@ -170,6 +170,14 @@ The **Company Tracker** tab merges, per company, the applications the pipeline t
 
 It is private by design: [`tracker.py`](tracker.py) keeps your stages and notes in the gitignored `tracker.json`, the server binds to `127.0.0.1`, and the API only answers the dashboard's own pages (no wildcard CORS, trusted hosts only), so other websites open in the browser cannot read it. Tests write to a temporary sheet, never the real one. `python test_tracker.py` runs its offline tests.
 
+**From your phone, privately (Tailscale):** the dashboard is never put on the public internet. Install [Tailscale](https://tailscale.com/download) on the laptop and the phone and sign in to the same account. Put the laptop's Tailscale name in `.env` (`DASHBOARD_ALLOWED_HOSTS=<laptop>.<tailnet>.ts.net`), start the dashboard, and share it on your tailnet once:
+
+```bash
+tailscale serve --bg --http=80 http://127.0.0.1:8000    # tailnet only, survives restarts
+```
+
+Then open `http://<laptop>.<tailnet>.ts.net` on the phone. Tailscale encrypts the connection between your devices, so the browser's "not secure" label for plain HTTP does not apply here. Only devices signed in to your Tailscale account can reach it; the laptop must be on with the dashboard running. Turn it off with `tailscale serve --http=80 off`.
+
 ---
 
 ## 📄 ATS Resume Benchmark

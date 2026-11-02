@@ -143,9 +143,15 @@ app = FastAPI(
     version="2.0.0",
 )
 
+# Extra exact hostnames that may reach the dashboard, e.g. its private Tailscale name
+# (DASHBOARD_ALLOWED_HOSTS=laptop.tailnet.ts.net in .env). The server itself stays bound to 127.0.0.1.
+EXTRA_HOSTS = [h.strip() for h in os.getenv("DASHBOARD_ALLOWED_HOSTS", "").split(",") if h.strip()]
+
 # The dashboard holds private data (contacts, emails, the tracker). Only the dashboard's own pages may
 # call the API: a wildcard origin would let any website open in the browser read it from localhost.
-LOCAL_ORIGINS = ["http://127.0.0.1:8000", "http://localhost:8000"]
+LOCAL_ORIGINS = ["http://127.0.0.1:8000", "http://localhost:8000"] + [
+    f"{scheme}://{host}" for host in EXTRA_HOSTS for scheme in ("http", "https")
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=LOCAL_ORIGINS,
@@ -154,7 +160,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 # Rejects requests whose Host is not this machine (blocks DNS-rebinding attacks on the local server)
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", *EXTRA_HOSTS])
 
 # Mount static asset routes
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
