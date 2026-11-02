@@ -1186,3 +1186,103 @@ select.form-input {
   color: var(--text-secondary);
   white-space: pre-wrap;
 }
+
+/* -------------------------------------------------------------
+   Company Tracker
+------------------------------------------------------------- */
+.trk-funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.trk-funnel-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 28px;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.trk-funnel-row strong {
+  text-align: right;
+  color: var(--text-primary);
+}
+
+.trk-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-input);
+  overflow: hidden;
+}
+
+.trk-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+
+.trk-bar i.applied { background: var(--color-success); }
+.trk-bar i.tailored { background: var(--color-brand); }
+.trk-bar i.pending { background: var(--color-warning); }
+.trk-bar i.failed { background: var(--color-danger); }
+.trk-bar i.replied { background: var(--color-cyan); }
+.trk-bar i.muted { background: var(--text-muted); }
+
+.trk-recent {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.trk-recent span {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.trk-recent strong {
+  color: var(--text-primary);
+}
+
+.trk-stage {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.72rem;
+}
+
+tr.trk-details td {
+  background: var(--bg-input);
+}
+
+.trk-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  padding: 0.4rem 0.2rem;
+}
+
+.trk-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+}
+
+.trk-list a {
+  color: var(--color-brand);
+  text-decoration: none;
+  margin-left: 0.3rem;
+}

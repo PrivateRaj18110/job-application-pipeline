@@ -25,6 +25,7 @@ from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel
 
 # Ensure console supports UTF-8 on Windows
@@ -57,6 +58,7 @@ import apply_bot
 import main as pipeline_main
 import portfolio_builder
 import cold_emailer
+import tracker
 
 # ---------------------------------------------------------------------------
 # In-Memory Real-Time Log Buffer & Broadcaster
@@ -141,13 +143,18 @@ app = FastAPI(
     version="2.0.0",
 )
 
+# The dashboard holds private data (contacts, emails, the tracker). Only the dashboard's own pages may
+# call the API: a wildcard origin would let any website open in the browser read it from localhost.
+LOCAL_ORIGINS = ["http://127.0.0.1:8000", "http://localhost:8000"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=LOCAL_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+# Rejects requests whose Host is not this machine (blocks DNS-rebinding attacks on the local server)
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
 
 # Mount static asset routes
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -220,6 +227,11 @@ class OutreachDaemonRequest(BaseModel):
 
 class CopilotQuestion(BaseModel):
     question: str
+
+
+class TrackerUpdate(BaseModel):
+    stage: Optional[str] = None
+    notes: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------
@@ -854,6 +866,22 @@ async def stop_outreach():
         outreach_task.cancel()
         return {"status": "stopped", "message": "Outreach stopped."}
     return {"status": "idle", "message": "Outreach was not running."}
+
+
+# ---------------------------------------------------------------------------
+# Company Tracker (private: applications + emails + your stages, per company)
+# ---------------------------------------------------------------------------
+@app.get("/api/tracker")
+async def get_tracker():
+    return await asyncio.to_thread(tracker.build_overview)
+
+
+@app.put("/api/tracker/{company_key}")
+async def update_tracker(company_key: str, req: TrackerUpdate):
+    try:
+        return tracker.update_company(company_key, stage=req.stage, notes=req.notes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ---------------------------------------------------------------------------

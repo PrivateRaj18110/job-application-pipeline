@@ -138,6 +138,11 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
         Control Center & Live Console
       </button>
+      <button class="tab-btn" onclick="switchTab('tracker')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="3" y1="13" x2="21" y2="13"></line></svg>
+        Company Tracker
+        <span class="tab-badge" id="tab-tracker-count">0</span>
+      </button>
       <button class="tab-btn" onclick="switchTab('jobs')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
         Application Tracker
@@ -266,6 +271,80 @@
               <span class="log-badge INFO">INIT</span>
               <span class="log-msg">Visual dashboard console connected. Awaiting pipeline activity...</span>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TAB: COMPANY TRACKER (private, local only)
+    ========================================================== -->
+    <div id="tab-tracker" class="tab-content">
+      <section class="metrics-grid">
+        <div class="metric-card accent-blue">
+          <span class="metric-label">Companies</span>
+          <span class="metric-value" id="trk-companies">0</span>
+          <span class="metric-sub" id="trk-companies-sub">Applied to or contacted</span>
+        </div>
+        <div class="metric-card accent-green">
+          <span class="metric-label">Applications</span>
+          <span class="metric-value" id="trk-applied">0</span>
+          <span class="metric-sub" id="trk-applied-sub">Submitted</span>
+        </div>
+        <div class="metric-card accent-cyan">
+          <span class="metric-label">Emails Sent</span>
+          <span class="metric-value" id="trk-emails">0</span>
+          <span class="metric-sub" id="trk-emails-sub">0 follow-ups</span>
+        </div>
+        <div class="metric-card accent-amber">
+          <span class="metric-label">Replies & Interviews</span>
+          <span class="metric-value" id="trk-replies">0</span>
+          <span class="metric-sub" id="trk-replies-sub">Reply rate: n/a</span>
+        </div>
+      </section>
+
+      <div class="control-grid">
+        <div class="control-panel">
+          <div class="card">
+            <div class="card-title">PIPELINE BY STAGE</div>
+            <div id="trk-funnel" class="trk-funnel"></div>
+            <p class="hint-text" style="margin-top: 0.75rem;">Stages update automatically from applications and emails. Set Interviewing, Offer or Rejected yourself on any company.</p>
+          </div>
+          <div class="card">
+            <div class="card-title">RECENT ACTIVITY</div>
+            <ul id="trk-recent" class="trk-recent"></ul>
+          </div>
+          <div class="card">
+            <div class="card-title">PRIVATE</div>
+            <p class="hint-text">This tracker runs only on this computer. Your stages and notes are saved in <code>tracker.json</code>, which is never committed or published.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>COMPANIES</span>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" class="form-input" placeholder="Search companies..." oninput="searchTracker(this.value)">
+              <button class="btn btn-outline" onclick="loadTracker()">Refresh</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="jobs-table">
+              <thead>
+                <tr>
+                  <th>Company</th>
+                  <th style="width: 170px;">Stage</th>
+                  <th>Applications</th>
+                  <th>Emails</th>
+                  <th style="width: 120px;">Next follow-up</th>
+                  <th style="width: 130px;">Last activity</th>
+                  <th style="width: 90px;"></th>
+                </tr>
+              </thead>
+              <tbody id="trk-table-body">
+                <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading tracker...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadMasterResume();
   loadCv();
   loadContacts();
+  loadTracker();
 
   // Poll system status every 3 seconds
   setInterval(fetchStatus, 3000);
@@ -48,6 +49,7 @@ function switchTab(tabId) {
   const targetTab = document.getElementById(`tab-${tabId}`);
   if (targetTab) targetTab.classList.add('active');
 
+  if (tabId === 'tracker') loadTracker();
   if (tabId === 'jobs') loadJobsList();
   if (tabId === 'gallery') loadGallery();
   if (tabId === 'targets') loadTargetsConfig();
@@ -1285,6 +1287,168 @@ async function askCopilot() {
     btn.disabled = false;
     btn.textContent = 'Ask the copilot';
   }
+}
+
+// ---------------------------------------------------------------------------
+// Company Tracker (private: applications + emails + your stages, per company)
+// ---------------------------------------------------------------------------
+let trackerData = null;
+let trackerSearch = '';
+const trackerOpen = new Set();
+const STAGE_ORDER = ['in_progress', 'needs_you', 'applied', 'emailed', 'replied', 'interview', 'offer', 'rejected', 'not_interested'];
+const STAGE_CLASS = {
+  in_progress: 'pending', needs_you: 'failed', applied: 'applied', emailed: 'tailored', replied: 'replied',
+  interview: 'applied', offer: 'replied', rejected: 'muted', not_interested: 'muted',
+};
+const APP_STATE_LABEL = { applied: 'Applied', needs_you: 'Needs you', staged: 'Form staged', tailored: 'Resume tailored', pending: 'Pending' };
+const APP_STATE_CLASS = { applied: 'applied', needs_you: 'failed', staged: 'tailored', tailored: 'tailored', pending: 'pending' };
+
+async function loadTracker() {
+  try {
+    const res = await fetch('/api/tracker');
+    trackerData = await res.json();
+    renderTracker();
+  } catch (err) {
+    console.error('Tracker load failed:', err);
+  }
+}
+
+function searchTracker(value) {
+  trackerSearch = value.trim().toLowerCase();
+  renderTrackerTable();
+}
+
+function renderTracker() {
+  const t = trackerData.totals;
+  const set = (id, text) => { document.getElementById(id).textContent = text; };
+  set('tab-tracker-count', t.companies);
+  set('trk-companies', t.companies);
+  set('trk-companies-sub', t.follow_ups_due ? `${t.follow_ups_due} follow-up${t.follow_ups_due === 1 ? '' : 's'} due` : 'Applied to or contacted');
+  set('trk-applied', t.applied);
+  set('trk-applied-sub', `${t.applications} tracked · ${t.needs_you} need${t.needs_you === 1 ? 's' : ''} you`);
+  set('trk-emails', t.emails_sent);
+  set('trk-emails-sub', `${t.follow_ups_sent} follow-up${t.follow_ups_sent === 1 ? '' : 's'}`);
+  set('trk-replies', t.replies);
+  set('trk-replies-sub', `Reply rate: ${t.reply_rate === null ? 'n/a' : Math.round(t.reply_rate * 100) + '%'} · ${t.interviews} interviewing · ${t.offers} offer${t.offers === 1 ? '' : 's'}`);
+
+  const max = Math.max(1, ...Object.values(trackerData.funnel));
+  document.getElementById('trk-funnel').innerHTML = STAGE_ORDER.map(stage => {
+    const n = trackerData.funnel[stage] || 0;
+    return `
+      <div class="trk-funnel-row">
+        <span>${escapeHtml(trackerData.stage_labels[stage])}</span>
+        <div class="trk-bar"><i class="${STAGE_CLASS[stage]}" style="width: ${n / max * 100}%"></i></div>
+        <strong>${n}</strong>
+      </div>`;
+  }).join('');
+
+  document.getElementById('trk-recent').innerHTML = trackerData.recent.length
+    ? trackerData.recent.map(e => `
+        <li><span>${escapeHtml(formatWhen(e.at))}</span><strong>${escapeHtml(e.company)}</strong> ${escapeHtml(e.text)}</li>`).join('')
+    : '<li class="hint-text">Nothing yet. Activity appears here as the pipeline applies and emails.</li>';
+  renderTrackerTable();
+}
+
+function renderTrackerTable() {
+  const tbody = document.getElementById('trk-table-body');
+  if (!trackerData) return;
+  const rows = trackerData.companies.filter(c => {
+    if (!trackerSearch) return true;
+    return [c.name, c.notes, ...c.applications.map(a => a.title), ...c.contacts.map(x => x.name)]
+      .some(v => (v || '').toLowerCase().includes(trackerSearch));
+  });
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+      ${trackerData.companies.length ? 'No companies match your search.' : 'No companies yet. They appear here once the pipeline finds a job or you add a contact.'}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(c => {
+    const applied = c.applications.filter(a => a.state === 'applied').length;
+    const needsYou = c.applications.filter(a => a.state === 'needs_you').length;
+    const sent = c.contacts.filter(x => x.first_sent_at).length;
+    const replied = c.contacts.filter(x => x.replied_at).length;
+    const autoLabel = c.stage_source === 'auto' ? `Auto: ${c.stage_label}` : 'Automatic';
+    const options = Object.entries(trackerData.manual_stages).map(([value, label]) => `
+      <option value="${value}" ${(c.stage_source === 'you' ? c.stage : 'auto') === value ? 'selected' : ''}>${escapeHtml(value === 'auto' ? autoLabel : label)}</option>`).join('');
+    const open = trackerOpen.has(c.key);
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(c.name)}</div>
+          ${c.notes ? `<div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(c.notes.length > 70 ? c.notes.slice(0, 70) + '…' : c.notes)}</div>` : ''}
+        </td>
+        <td>
+          <span class="status-tag ${STAGE_CLASS[c.stage]}">● ${escapeHtml(c.stage_label)}</span>
+          <select class="form-input trk-stage" onchange="setTrackerStage('${c.key}', this.value)">${options}</select>
+        </td>
+        <td style="font-size: 0.78rem;">${c.applications.length
+          ? `${c.applications.length} tracked${applied ? ` · ${applied} applied` : ''}${needsYou ? ` · <span style="color: var(--color-danger);">${needsYou} need${needsYou === 1 ? 's' : ''} you</span>` : ''}`
+          : '<span style="color: var(--text-muted);">—</span>'}</td>
+        <td style="font-size: 0.78rem;">${c.contacts.length
+          ? `${c.contacts.length} contact${c.contacts.length === 1 ? '' : 's'}${sent ? ` · ${sent} emailed` : ''}${replied ? ` · ${replied} replied` : ''}`
+          : '<span style="color: var(--text-muted);">—</span>'}</td>
+        <td style="font-size: 0.78rem; ${c.follow_up_overdue ? 'color: var(--color-warning); font-weight: 700;' : ''}">${escapeHtml(c.next_follow_up || '—')}</td>
+        <td style="color: var(--text-muted); font-size: 0.75rem;">${escapeHtml(formatWhen(c.last_activity) || '—')}</td>
+        <td><button class="btn btn-outline btn-xs" onclick="toggleTrackerRow('${c.key}')">${open ? 'Hide' : 'Details'}</button></td>
+      </tr>
+      ${open ? `<tr class="trk-details"><td colspan="7">${trackerDetails(c)}</td></tr>` : ''}`;
+  }).join('');
+}
+
+function trackerDetails(c) {
+  const apps = c.applications.map(a => `
+    <li>
+      <span class="status-tag ${APP_STATE_CLASS[a.state]}">● ${escapeHtml(APP_STATE_LABEL[a.state])}</span>
+      ${a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" rel="noopener">${escapeHtml(a.title)} ↗</a>` : escapeHtml(a.title)}
+      <div class="hint-text">${escapeHtml(a.status)}${a.resume ? ` · resume: ${escapeHtml(a.resume)}` : ''}</div>
+    </li>`).join('') || '<li class="hint-text">No applications tracked.</li>';
+  const contacts = c.contacts.map(x => `
+    <li>
+      <strong>${escapeHtml(x.name)}</strong> <span class="hint-text">${escapeHtml(x.email)}${x.role ? ` · ${escapeHtml(x.role)}` : ''}</span>
+      <div class="hint-text">${escapeHtml(x.status_label)}${x.first_sent_at ? ` · first email ${escapeHtml(formatWhen(x.first_sent_at))}` : ''}${x.follow_ups ? ` · ${x.follow_ups} follow-up${x.follow_ups === 1 ? '' : 's'}` : ''}${x.replied_at ? ` · replied ${escapeHtml(formatWhen(x.replied_at))}` : ''}${x.follow_up_due ? ` · follow-up due ${escapeHtml(x.follow_up_due)}` : ''}</div>
+    </li>`).join('') || '<li class="hint-text">No contacts. Add recruiters in Cold Outreach.</li>';
+  const events = c.events.slice(0, 12).map(e => `<li><span>${escapeHtml(formatWhen(e.at))}</span> ${escapeHtml(e.text)}</li>`).join('');
+  return `
+    <div class="trk-detail-grid">
+      <div><div class="form-label">APPLICATIONS</div><ul class="trk-list">${apps}</ul></div>
+      <div><div class="form-label">EMAILS</div><ul class="trk-list">${contacts}</ul></div>
+      <div>
+        <div class="form-label">YOUR NOTES</div>
+        <textarea id="trk-notes-${c.key}" class="form-input" rows="4" style="width: 100%;" placeholder="Interview date, who you spoke to, next step...">${escapeHtml(c.notes)}</textarea>
+        <button class="btn btn-primary btn-xs" style="margin-top: 0.4rem;" onclick="saveTrackerNotes('${c.key}')">Save notes</button>
+        ${events ? `<div class="form-label" style="margin-top: 0.8rem;">TIMELINE</div><ul class="trk-recent">${events}</ul>` : ''}
+      </div>
+    </div>`;
+}
+
+function toggleTrackerRow(key) {
+  trackerOpen.has(key) ? trackerOpen.delete(key) : trackerOpen.add(key);
+  renderTrackerTable();
+}
+
+async function saveTracker(key, body, message) {
+  try {
+    const res = await fetch(`/api/tracker/${encodeURIComponent(key)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(formatDetail(data.detail) || 'Save failed');
+    showToast(message, 'success');
+    await loadTracker();
+  } catch (err) {
+    showToast(`Tracker: ${err.message}`, 'error');
+  }
+}
+
+function setTrackerStage(key, stage) {
+  saveTracker(key, { stage }, stage === 'auto' ? 'Stage set back to automatic.' : 'Stage saved.');
+}
+
+function saveTrackerNotes(key) {
+  saveTracker(key, { notes: document.getElementById(`trk-notes-${key}`).value }, 'Notes saved.');
 }
 
 // ---------------------------------------------------------------------------

@@ -164,6 +164,14 @@ python test_outreach.py                      # offline tests, never sends mail
 
 ---
 
+## 🗂️ Company Tracker (private)
+
+The **Company Tracker** tab merges, per company, the applications the pipeline tracked, the cold emails sent (follow-ups, replies) and the stage you set yourself (Interviewing, Offer, Rejected), with notes and a timeline. Stages are automatic until you override them: replied, applied, emailed, needs you (blocked or failed applications), in progress. Next follow-up dates come from `EMAIL_FOLLOWUP_DAYS`.
+
+It is private by design: [`tracker.py`](tracker.py) keeps your stages and notes in the gitignored `tracker.json`, the server binds to `127.0.0.1`, and the API only answers the dashboard's own pages (no wildcard CORS, trusted hosts only), so other websites open in the browser cannot read it. Tests write to a temporary sheet, never the real one. `python test_tracker.py` runs its offline tests.
+
+---
+
 ## 📄 ATS Resume Benchmark
 
 [`ats_benchmark.py`](ats_benchmark.py) collects real postings for the target roles from companies' public job-board feeds (Greenhouse, Lever, Ashby, and SmartRecruiters filtered to India), then reads a resume PDF the way an ATS parser does and scores it against every posting.

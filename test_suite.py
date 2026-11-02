@@ -17,6 +17,7 @@ import sys
 import os
 import json
 import asyncio
+import tempfile
 from pathlib import Path
 from datetime import datetime
 
@@ -37,6 +38,12 @@ import sheet_manager
 import resume_tailor
 import apply_bot
 import scheduler
+
+# Test jobs must never land in the real tracker (the local backup or the Google Sheet):
+# point the sheet store at a throwaway file and force local mode
+_TEST_SHEET_DIR = Path(tempfile.mkdtemp(prefix="pipeline_test_sheet_"))
+sheet_manager.LOCAL_BACKUP_FILE = _TEST_SHEET_DIR / "sheet_local_backup.json"
+sheet_manager._default_manager = sheet_manager.SheetManager(credentials_path=str(_TEST_SHEET_DIR / "no_credentials.json"))
 
 
 def print_banner(title: str):

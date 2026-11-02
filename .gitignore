@@ -27,3 +27,7 @@ site_repo/
 
 # ATS benchmark: collected job postings and reports (regenerated)
 output/ats/
+
+# Private tracker: your stages and notes per company
+tracker.json
+tracker.json.tmp
