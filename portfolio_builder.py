@@ -10,6 +10,7 @@ Run with:
   python portfolio_builder.py --publish       # also publish portfolio/ to the public site repo
 """
 
+import os
 import re
 import sys
 import json
@@ -33,6 +34,8 @@ PORTFOLIO_CV_FILE = PORTFOLIO_DIR / "cv.json"
 PORTFOLIO_PDF_FILE = PORTFOLIO_DIR / "resume.pdf"
 PORTFOLIO_INDEX_FILE = PORTFOLIO_DIR / "index.html"
 MASTER_RESUME_FILE = BASE_DIR / "master_resume.md"
+# The resume employers receive (cold-email attachment): the public resume.pdf plus the private phone number
+APPLICATION_PDF_FILE = resume_tailor.OUTPUT_DIR / "Resume_Application.pdf"
 
 REQUIRED_SECTIONS = ["profile", "skills", "projects", "experience", "education"]
 
@@ -84,6 +87,19 @@ def validate_cv(cv: Dict[str, Any]) -> List[str]:
             errors.append(f"resume.projects refers to unknown project slug '{item.get('slug')}'.")
 
     return errors
+
+
+def with_private_contact(cv: Dict[str, Any]) -> Dict[str, Any]:
+    """Adds the phone number kept out of git (APPLICANT_PHONE in .env) for what goes to employers.
+
+    cv.json, master_resume.md, the public site and its resume.pdf never contain it; only the
+    application resume, tailored resumes and email signatures do.
+    """
+    phone = os.getenv("APPLICANT_PHONE", "").strip()
+    profile = cv.get("profile", {})
+    if not phone or profile.get("phone"):
+        return cv
+    return dict(cv, profile=dict(profile, phone=phone))
 
 
 def save_cv(cv: Dict[str, Any], cv_path: Optional[Path] = None) -> None:
@@ -270,6 +286,11 @@ def build_portfolio(cv: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
     else:
         logger.warning("[CV] PDF compilation failed; portfolio/resume.pdf was not updated.")
 
+    # The copy for employers carries the private phone number; it stays in the gitignored output/ folder
+    application_cv = with_private_contact(cv)
+    application_cv = dict(application_cv, profile=dict(application_cv["profile"], show_phone=True))
+    resume_tailor.convert_markdown_to_pdf(cv_to_resume_markdown(application_cv), output_filename=APPLICATION_PDF_FILE.name)
+
     _stamp_page_metadata(cv)
     for project in cv.get("projects", []):
         for shot in project.get("gallery", []):
@@ -281,6 +302,7 @@ def build_portfolio(cv: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         "generated_at": generated_at,
         "cv_path": str(PORTFOLIO_CV_FILE),
         "pdf_path": str(PORTFOLIO_PDF_FILE) if PORTFOLIO_PDF_FILE.exists() else "",
+        "application_pdf_path": str(APPLICATION_PDF_FILE) if APPLICATION_PDF_FILE.exists() else "",
     }
 
 

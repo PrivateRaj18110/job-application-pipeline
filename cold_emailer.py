@@ -457,7 +457,7 @@ def _parse_llm_email(text: str) -> Tuple[str, str]:
 
 
 def _signature(cv: Dict[str, Any]) -> str:
-    profile = cv["profile"]
+    profile = portfolio_builder.with_private_contact(cv)["profile"]
     links = profile.get("links", {})
     link_line = " | ".join(u for u in (links.get("portfolio"), links.get("linkedin"), links.get("github")) if u)
     lines = ["Best regards,", profile.get("name", ""), profile.get("title", ""), link_line, profile.get("phone", "")]
@@ -497,16 +497,20 @@ def build_message(
 
 
 def _resolve_attachment(contact: Dict[str, Any]) -> Optional[Path]:
-    """Prefers the tailored resume of the linked job, else the portfolio CV PDF (built on demand)."""
+    """Prefers the tailored resume of the linked job, else the application CV (the public CV plus
+    the private phone number), built on demand; the public CV PDF is the last resort."""
     _, tailored_pdf = _job_context(contact.get("job_url", ""))
     if tailored_pdf:
         return tailored_pdf
-    if not portfolio_builder.PORTFOLIO_PDF_FILE.exists():
+    if not portfolio_builder.APPLICATION_PDF_FILE.exists():
         try:
             portfolio_builder.build_portfolio()
         except Exception as e:
             logger.warning("[EMAIL] Could not build the CV PDF: %s", e)
-    return portfolio_builder.PORTFOLIO_PDF_FILE if portfolio_builder.PORTFOLIO_PDF_FILE.exists() else None
+    for pdf in (portfolio_builder.APPLICATION_PDF_FILE, portfolio_builder.PORTFOLIO_PDF_FILE):
+        if pdf.exists():
+            return pdf
+    return None
 
 
 # ---------------------------------------------------------------------------

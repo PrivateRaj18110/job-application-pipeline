@@ -45,8 +45,9 @@ CRITICAL INTEGRITY CONSTRAINTS (ZERO HALLUCINATION POLICY):
 
 OUTPUT SPECIFICATIONS:
 - Format: Clean, beautifully structured Markdown.
-- Header: Candidate name, title, email, phone, LinkedIn.
-- Sections: Education, Technical Skills, Highlighted Projects, Professional Experience/Internships, Certifications, Research & Leadership.
+- Header: candidate name, title, email and links exactly as in the Master Resume, with each link's address as its visible text.
+- Sections, with these exact headings so applicant tracking systems recognise them: Summary, Skills, Projects, Experience, Education, Certifications, Achievements.
+- Length: at most two pages.
 - Return ONLY the raw markdown resume text. DO NOT wrap with ```markdown code fences or add conversational greetings.
 """
 
@@ -156,11 +157,36 @@ def generate_text(system_prompt: str, user_prompt: str, temperature: float = 0.4
 
 def _fallback_heuristic_tailoring(job_description: str, master_resume_text: str) -> str:
     """
-    Fallback when no LLM API key is configured: returns the master resume unchanged,
-    so test runs and dry runs still produce a truthful PDF without external keys.
+    Fallback when no LLM API key is configured: returns the concise ATS resume from cv.json
+    (or the master resume when cv.json has no "resume" section), untailored but truthful,
+    so test runs and dry runs still produce a real PDF without external keys.
     """
+    import portfolio_builder
+
+    cv = portfolio_builder.load_cv()
+    if cv.get("resume"):
+        logger.info("No LLM API key configured; using the ATS resume from cv.json without tailoring.")
+        return portfolio_builder.cv_to_resume_markdown(cv)
     logger.info("No LLM API key configured; using the master resume without tailoring.")
     return master_resume_text.strip()
+
+
+def _with_private_phone(markdown_content: str) -> str:
+    """Adds the phone number kept out of git (APPLICANT_PHONE in .env) after the email in the header.
+
+    The master resume is tracked in git, so it never contains the number; resumes sent to employers do.
+    """
+    phone = os.getenv("APPLICANT_PHONE", "").strip()
+    lines = markdown_content.splitlines()
+    header = "\n".join(lines[:8])
+    if not phone or re.sub(r"\D", "", phone)[-10:] in re.sub(r"\D", "", header):
+        return markdown_content
+    for i, line in enumerate(lines[:8]):
+        email = re.search(r"[\w.+-]+@[\w-]+\.[\w.]+", line)
+        if email:
+            lines[i] = f"{line[:email.end()]} | {phone}{line[email.end():]}"
+            return "\n".join(lines)
+    return markdown_content
 
 
 def tailor_resume(job_description: str, master_resume_text: Optional[str] = None) -> str:
@@ -194,7 +220,7 @@ def tailor_resume(job_description: str, master_resume_text: Optional[str] = None
     else:
         markdown_content = _fallback_heuristic_tailoring(job_description, master_resume_text)
 
-    return markdown_content
+    return _with_private_phone(markdown_content)
 
 
 def _render_pdf_with_ats_font(markdown_content: str, css: str, output_path: Path) -> bool:

@@ -179,6 +179,7 @@ It is private by design: [`tracker.py`](tracker.py) keeps your stages and notes 
 - **Parsing checks:** pages, ligature glyphs that split words ("veriﬁcation"), email / phone / visible URLs in the header, standard section headings, images and tables.
 - **Keyword match:** about 80 skills with synonyms ("Google Cloud" counts as GCP); for each posting, the share of the skills it asks for that the resume names. Skills are only added to `cv.json` when the projects show them.
 - `resume.pdf` is rendered from `cv.json`'s `resume` section in Segoe UI, which has no ligature glyphs, with the addresses as visible link text.
+- **Phone number:** set `APPLICANT_PHONE` in `.env`. It goes only on what employers receive (the application CV in `output/Resume_Application.pdf` that cold emails attach, tailored resumes, email signatures and apply-bot forms), never into `cv.json`, `master_resume.md`, git or the public site. Without an LLM key, tailored resumes fall back to this ATS resume rather than the long master resume.
 
 ```bash
 python ats_benchmark.py collect                       # postings -> output/ats/postings.jsonl

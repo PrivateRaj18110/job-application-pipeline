@@ -1202,5 +1202,5 @@
     ],
     "note": "Arrows show how data moves. The LIVE runtime trades on paper, and LLS routes no real orders. The VM1 → algomatrics.in link and the LLS export contract were built and verified end to end before release."
   },
-  "generated_at": "2026-11-02 22:45"
+  "generated_at": "2026-11-02 23:27"
 }
