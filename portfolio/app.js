@@ -355,6 +355,12 @@ function renderProjectPage() {
           ${(p.results || []).length ? `<div><h2>Results</h2>${list(p.results)}</div>` : ''}
         </section>` : ''}
 
+      ${(p.outcome || []).length ? `
+        <section class="case-section">
+          <h2>Outcome</h2>
+          ${p.outcome.map(t => `<p>${esc(t)}</p>`).join('')}
+        </section>` : ''}
+
       ${(p.tech || []).length ? `
         <section class="case-section">
           <h2>Built with</h2>

@@ -788,7 +788,12 @@
             "SQL": 161
           }
         }
-      }
+      },
+      "outcome": [
+        "The strategies stayed on paper. The strongest one, an intraday mean-reversion strategy on in-the-money options, netted +₹15 per trade after costs, less than one price tick (₹25), and turned negative with just 500 ms of delay against a measured 733 ms from signal to fill. Its deployment review was NO-GO, and the research recommended committing no capital.",
+        "Rising costs and thin liquidity left no room for an edge that small: STT on option sales rose from 0.10% to 0.15% of premium in April 2026, statutory charges alone came to about 0.24% per trade, and stock options traded at a typical bid-ask spread of about 1.25% (both measured in RQIE).",
+        "So I stopped at paper trading. The skills carry over: real-time data pipelines, cloud systems and evaluation that refuses to fool itself now go into AI and backend engineering."
+      ]
     },
     {
       "name": "LLS: Low-Latency Trading Infrastructure",
@@ -990,7 +995,11 @@
           "last_commit": "",
           "commits_by_month": {}
         }
-      }
+      },
+      "outcome": [
+        "No edge survived realistic trading conditions. Profits turned negative after 2 seconds of delay (5 seconds in one case), and the brokerage at which trades would break even was negative at every delay, so with one lot per trade no fee level could make them pay.",
+        "Statutory charges came to about 0.24% per trade, mostly STT, which rose from 0.10% to 0.15% of option premium in April 2026, and stock options traded at a typical bid-ask spread of about 1.25%. Because the thresholds were fixed in advance, the engine reported this result instead of searching for settings that looked profitable."
+      ]
     },
     {
       "name": "Audio / Visual Summarization",
@@ -1218,5 +1227,5 @@
     ],
     "note": "Arrows show how data moves. The LIVE runtime trades on paper, and LLS routes no real orders. The VM1 → algomatrics.in link and the LLS export contract were built and verified end to end before release."
   },
-  "generated_at": "2026-11-02 21:07"
+  "generated_at": "2026-11-02 21:32"
 }
