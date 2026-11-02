@@ -220,11 +220,11 @@
       },
       {
         "label": "Machine learning",
-        "items": "scikit-learn, XGBoost, LightGBM, statsmodels, SciPy, statistics (FDR / Holm testing, bootstrap, walk-forward validation)"
+        "items": "scikit-learn, XGBoost, LightGBM, statsmodels, SciPy, deep learning (TCN and causal 1D CNN models implemented in C++), MLOps (model registry, artifact verification, shadow validation), statistics (FDR / Holm testing, bootstrap, walk-forward validation)"
       },
       {
         "label": "Backend & data",
-        "items": "Python, FastAPI, REST APIs, Pydantic, SQLAlchemy, SQL, PostgreSQL, Redis, DuckDB, pandas, NumPy, ETL / data pipelines, data modeling, event-driven systems"
+        "items": "Python, FastAPI, REST APIs, WebSockets, Pydantic, SQLAlchemy, SQL, PostgreSQL, Redis Streams, DuckDB, pandas, NumPy, ETL / data pipelines, data modeling, system design, event-driven and distributed systems (outbox pattern, idempotent consumers, dead-letter queues)"
       },
       {
         "label": "Cloud & DevOps",
@@ -232,7 +232,7 @@
       },
       {
         "label": "Also",
-        "items": "C++20, CMake, TypeScript, React, Playwright, Power BI, Advanced Excel, SAP"
+        "items": "C++20, CMake, TypeScript / JavaScript, React, Playwright, Power BI, Advanced Excel, SAP"
       }
     ],
     "projects": [
@@ -243,7 +243,7 @@
         "bullets": [
           "Built a multi-tenant SaaS with REST APIs in FastAPI: plans and billing (Razorpay / Stripe with GST), broker connections (Zerodha, Angel One, Flattrade), risk limits and kill switches.",
           "Runs across AWS and Google Cloud: a GCP trading VM sends monitoring batches over HTTPS to the AWS platform; deploys with one Docker Compose command or on Kubernetes with KEDA / HPA autoscaling.",
-          "Clean Architecture / DDD monorepo with 152 commits, 219 test files and CI/CD in GitHub Actions; 330 ops-backend, 440 platform and 118 frontend tests passing (Sep 2026).",
+          "Designed the system as a Clean Architecture / DDD monorepo with an event bus on Redis Streams (outbox relay, idempotent consumers, dead-letter handling); 152 commits, 219 test files, CI/CD in GitHub Actions, and 330 ops-backend, 440 platform and 118 frontend tests passing (Sep 2026).",
           "AI layer: an assistant on the Claude API that answers only from figures in its context, and an AI-CIO forecast whose top-10 hit rate reached 27.8% against an 8.2% base rate (3.4x lift) in backtest."
         ]
       },
@@ -273,7 +273,7 @@
         "stack": "C++20, CMake, Python",
         "bullets": [
           "Lock-free SPSC ring-buffer pipeline from the market feed to a preallocated market-state engine with zero-copy snapshots.",
-          "C++ ML stack with purged walk-forward splits, leakage detection, tree ensembles, TCN / CNN1D models and a zero-allocation inference engine.",
+          "Deep learning and MLOps in C++: TCN and causal 1D CNN models, tree ensembles, purged walk-forward splits, leakage detection, a model registry with verified artifacts, shadow validation and a zero-allocation inference engine.",
           "A differential oracle proves the C++ port reproduces the Python strategy exactly; 214 source and 98 test files with ASan / UBSan builds."
         ]
       },
