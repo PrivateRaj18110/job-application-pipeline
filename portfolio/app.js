@@ -52,6 +52,7 @@ function renderAll() {
   renderSkills();
   renderProjectFilters();
   renderProjects();
+  renderSystemMap();
   renderTimeline();
   renderEducation();
   renderContact();
@@ -321,6 +322,15 @@ function renderProjectPage() {
           ${renderDiagram(p)}
         </section>` : ''}
 
+      ${(p.diagrams || []).map(d => `
+        <section class="case-section">
+          <h2>${esc(d.title)}</h2>
+          ${d.caption ? `<p>${esc(d.caption)}</p>` : ''}
+          ${renderDiagram({ name: d.title, diagram: d.style, architecture: d.steps || [] })}
+        </section>`).join('')}
+
+      ${p.proof ? renderProof(p.proof) : ''}
+
       ${(p.decisions || []).length || (p.results || []).length ? `
         <section class="case-section case-columns">
           ${(p.decisions || []).length ? `<div><h2>Key engineering decisions</h2>${list(p.decisions)}</div>` : ''}
@@ -341,6 +351,154 @@ function renderProjectPage() {
   `;
 
   initLightbox(p.gallery || []);
+}
+
+// ---------------------------------------------------------------------------
+// System map: how the projects connect (inline SVG from cv.system_map)
+// ---------------------------------------------------------------------------
+const MAP_NODE_W = 210;
+const MAP_NODE_H = 104;
+
+function wrapText(text, maxChars) {
+  const lines = [];
+  let line = '';
+  String(text || '').split(/\s+/).forEach(word => {
+    if ((line + ' ' + word).trim().length > maxChars && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = (line + ' ' + word).trim();
+    }
+  });
+  if (line) lines.push(line);
+  return lines;
+}
+
+function edgePath(from, to) {
+  const fc = { x: from.x + MAP_NODE_W / 2, y: from.y + MAP_NODE_H / 2 };
+  const tc = { x: to.x + MAP_NODE_W / 2, y: to.y + MAP_NODE_H / 2 };
+  const dx = tc.x - fc.x;
+  const dy = tc.y - fc.y;
+  let a, b, c1, c2;
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    const dir = Math.sign(dx) || 1;
+    a = { x: fc.x + dir * MAP_NODE_W / 2, y: fc.y };
+    b = { x: tc.x - dir * (MAP_NODE_W / 2 + 6), y: tc.y };
+    const bend = (b.x - a.x) / 2;
+    c1 = { x: a.x + bend, y: a.y };
+    c2 = { x: b.x - bend, y: b.y };
+  } else {
+    const dir = Math.sign(dy) || 1;
+    a = { x: fc.x, y: fc.y + dir * MAP_NODE_H / 2 };
+    b = { x: tc.x, y: tc.y - dir * (MAP_NODE_H / 2 + 6) };
+    const bend = (b.y - a.y) / 2;
+    c1 = { x: a.x, y: a.y + bend };
+    c2 = { x: b.x, y: b.y - bend };
+  }
+  const mid = { x: (a.x + 3 * c1.x + 3 * c2.x + b.x) / 8, y: (a.y + 3 * c1.y + 3 * c2.y + b.y) / 8 };
+  return { d: `M${a.x},${a.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${b.x},${b.y}`, mid };
+}
+
+function renderSystemMap() {
+  const map = cv.system_map;
+  const section = document.getElementById('system');
+  if (!map || !(map.nodes || []).length) return;
+  section.hidden = false;
+  if (map.title) document.getElementById('system-title').textContent = map.title;
+  document.getElementById('system-intro').textContent = map.intro || '';
+  document.getElementById('system-note').textContent = map.note || '';
+
+  const nodes = Object.fromEntries(map.nodes.map(n => [n.id, n]));
+  const width = map.width || 1120;
+  const height = map.height || 560;
+
+  const lanes = (map.lanes || []).map(l => `
+    <text class="map-lane" x="${l.x}" y="22">${esc(l.label)}</text>`).join('');
+
+  const edges = (map.edges || []).filter(e => nodes[e.from] && nodes[e.to]).map(e => {
+    const { d, mid } = edgePath(nodes[e.from], nodes[e.to]);
+    const label = e.label || '';
+    const w = label.length * 6.3 + 14;
+    return `
+      <g class="map-edge">
+        <path d="${d}" marker-end="url(#map-arrow)"></path>
+        ${label ? `<rect x="${mid.x - w / 2}" y="${mid.y - 11}" width="${w}" height="20" rx="10"></rect>
+        <text x="${mid.x}" y="${mid.y + 4}" text-anchor="middle">${esc(label)}</text>` : ''}
+      </g>`;
+  }).join('');
+
+  const boxes = map.nodes.map(n => {
+    const sub = wrapText(n.sub, 31).slice(0, 4);
+    const body = `
+      <rect class="map-node-box ${esc(n.kind || '')}" x="${n.x}" y="${n.y}" width="${MAP_NODE_W}" height="${MAP_NODE_H}" rx="12"></rect>
+      <text class="map-node-title" x="${n.x + 14}" y="${n.y + 26}">${esc(n.label)}</text>
+      ${sub.map((line, i) => `<text class="map-node-sub" x="${n.x + 14}" y="${n.y + 46 + i * 15}">${esc(line)}</text>`).join('')}`;
+    return n.slug
+      ? `<a class="map-node" href="project.html?p=${encodeURIComponent(n.slug)}" aria-label="${esc(n.label)}: open case study">${body}</a>`
+      : `<g class="map-node">${body}</g>`;
+  }).join('');
+
+  document.getElementById('system-map').innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="system-title" style="min-width: ${Math.round(width * 0.8)}px">
+      <defs>
+        <marker id="map-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z"></path>
+        </marker>
+      </defs>
+      ${lanes}${edges}${boxes}
+    </svg>`;
+
+  document.getElementById('system-edges').innerHTML = (map.edges || [])
+    .filter(e => nodes[e.from] && nodes[e.to])
+    .map(e => `<li><strong>${esc(nodes[e.from].label)}</strong> → <strong>${esc(nodes[e.to].label)}</strong>${e.label ? `: ${esc(e.label)}` : ''}</li>`)
+    .join('');
+}
+
+// ---------------------------------------------------------------------------
+// Proof of work (stats measured from the repositories + evidence list)
+// ---------------------------------------------------------------------------
+function compactNumber(n) {
+  if (n >= 1000) return `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k`;
+  return String(n);
+}
+
+function formatMonth(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  return new Date(y, m - 1, 1).toLocaleString('en', { month: 'short', year: 'numeric' });
+}
+
+function renderProof(proof) {
+  const s = proof.stats || {};
+  const tiles = [
+    s.commits ? [s.commits, 'Commits'] : null,
+    s.total_code_lines ? [compactNumber(s.total_code_lines), 'Lines of code'] : null,
+    s.test_files ? [s.test_files, 'Test files'] : null,
+    s.markdown_docs ? [s.markdown_docs, 'Docs & reports'] : null,
+  ].filter(Boolean);
+
+  const langs = Object.entries(s.lines_by_language || {}).slice(0, 5);
+  const totalLang = langs.reduce((sum, [, n]) => sum + n, 0) || 1;
+  const months = Object.entries(s.commits_by_month || {});
+  const maxMonth = Math.max(1, ...months.map(([, n]) => n));
+  const period = s.first_commit ? `${formatMonth(s.first_commit.slice(0, 7))} – ${formatMonth((s.last_commit || s.first_commit).slice(0, 7))}` : '';
+
+  return `
+    <section class="case-section proof">
+      <h2>Proof of work</h2>
+      ${tiles.length ? `<div class="stat-grid proof-stats">${tiles.map(([v, l]) => `<div class="stat"><div class="stat-value">${esc(v)}</div><div class="stat-label">${esc(l)}</div></div>`).join('')}</div>` : ''}
+      ${langs.length ? `
+        <div class="lang-bar" role="img" aria-label="Code by language: ${langs.map(([l, n]) => `${l} ${Math.round(n / totalLang * 100)}%`).join(', ')}">
+          ${langs.map(([l, n], i) => `<span class="lang-${i}" style="width: ${n / totalLang * 100}%"></span>`).join('')}
+        </div>
+        <ul class="lang-legend">${langs.map(([l, n], i) => `<li><i class="lang-${i}"></i>${esc(l)} <span>${Math.round(n / totalLang * 100)}%</span></li>`).join('')}</ul>` : ''}
+      ${months.length > 1 ? `
+        <div class="commit-chart" role="img" aria-label="Commits per month${period ? `, ${period}` : ''}">
+          ${months.map(([m, n]) => `<div class="commit-col" title="${esc(formatMonth(m))}: ${n} commits"><span style="height: ${Math.max(4, n / maxMonth * 100)}%"></span><em>${esc(formatMonth(m).split(' ')[0])}</em></div>`).join('')}
+        </div>
+        <p class="proof-caption">Commits per month${period ? `, ${esc(period)}` : ''}. Counted from the repository's git history.</p>` : ''}
+      ${(proof.evidence || []).length ? `<ul class="case-list proof-evidence">${proof.evidence.map(e => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}
+      ${proof.measured_on ? `<p class="proof-caption">Code and history measured on ${esc(proof.measured_on)}.</p>` : ''}
+    </section>`;
 }
 
 function renderDiagram(p) {

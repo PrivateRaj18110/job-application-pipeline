@@ -1,0 +1,106 @@
+[
+  {
+    "question": "How does monitoring data get from VM1 on Google Cloud to algomatrics.in?",
+    "expected_sources": [
+      "vm1-vm2-receiver.md"
+    ],
+    "expected_facts": [
+      "agent/batch"
+    ]
+  },
+  {
+    "question": "What does the AI-CIO movers radar predict?",
+    "expected_sources": [
+      "market-intelligence.md"
+    ],
+    "expected_facts": [
+      "major move"
+    ]
+  },
+  {
+    "question": "What top-10 hit rate did the AI-CIO opening forecast reach in its backtest?",
+    "expected_sources": [
+      "market-intelligence.md"
+    ],
+    "expected_facts": [
+      "27.8"
+    ]
+  },
+  {
+    "question": "Which LLM provider powers the Algo Matrics AI assistant, and what happens when no API key is set?",
+    "expected_sources": [
+      "operations/ai.md"
+    ],
+    "expected_facts": [
+      "anthropic|claude",
+      "null"
+    ]
+  },
+  {
+    "question": "What is the no-lookahead law in the confidence-based research harness?",
+    "expected_sources": [
+      "Research lab/README.md"
+    ],
+    "expected_facts": [
+      "next bar open"
+    ]
+  },
+  {
+    "question": "What does LLS daily forensic recording store for each trading day?",
+    "expected_sources": [
+      "DAILY_FORENSIC_RECORDING.md"
+    ],
+    "expected_facts": [
+      "ticks",
+      "trades"
+    ]
+  },
+  {
+    "question": "Why can LLS not route real-money orders?",
+    "expected_sources": [
+      "LLS/README.md",
+      "EXECUTION_SAFETY.md"
+    ],
+    "expected_facts": [
+      "mock broker"
+    ]
+  },
+  {
+    "question": "What did RQIE conclude about L1 option-quote imbalance?",
+    "expected_sources": [
+      "RQIE/README.md",
+      "RQIE/docs"
+    ],
+    "expected_facts": [
+      "negligible"
+    ]
+  },
+  {
+    "question": "How many ops-backend tests passed in the monitoring.v1 receiver test report?",
+    "expected_sources": [
+      "monitoring/RECEIVER_TEST_REPORT.md"
+    ],
+    "expected_facts": [
+      "340"
+    ]
+  },
+  {
+    "question": "Which strategies does the LIVE paper runtime trade?",
+    "expected_sources": [
+      "LIVE/README.md"
+    ],
+    "expected_facts": [
+      "H30_X2",
+      "S2",
+      "S3"
+    ]
+  },
+  {
+    "question": "What is the capital of France?",
+    "in_scope": false
+  },
+  {
+    "question": "Which football club does Raj support?",
+    "in_scope": false
+  }
+]

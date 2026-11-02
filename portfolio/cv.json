@@ -64,6 +64,12 @@
           "name": "LLM APIs"
         },
         {
+          "name": "RAG"
+        },
+        {
+          "name": "Open-source LLMs (Ollama)"
+        },
+        {
           "name": "Prompt Engineering"
         },
         {
@@ -269,7 +275,68 @@
         "Live public site at algomatrics.in.",
         "Runs across AWS and Google Cloud VMs, with one-command Docker Compose bring-up and Kubernetes manifests with KEDA / HPA autoscaling.",
         "152 commits and 95 Python test files, with GitHub Actions CI for backend, integration, frontend, ops and container images."
-      ]
+      ],
+      "diagrams": [
+        {
+          "title": "Live data path: Google Cloud → AWS",
+          "caption": "How monitoring data from the paper-trading runtime on Google Cloud VM1 reaches the console on algomatrics.in.",
+          "style": "flow",
+          "steps": [
+            {
+              "layer": "VM1 data agent",
+              "detail": "raj-agent.service on Google Cloud packages strategy, execution and health telemetry from the LIVE runtime."
+            },
+            {
+              "layer": "HTTPS batch",
+              "detail": "POST /ops/api/agent/batch with TLS verification on, compact sorted JSON and no redirects."
+            },
+            {
+              "layer": "Edge nginx",
+              "detail": "TLS on 443 on the AWS host, proxied to the container nginx."
+            },
+            {
+              "layer": "Ops receiver",
+              "detail": "FastAPI ops-api validates the contract, deduplicates and stores each batch."
+            },
+            {
+              "layer": "Console",
+              "detail": "System Health, LIVE monitoring and VM1 views, scoped to sources the viewer owns."
+            }
+          ]
+        }
+      ],
+      "proof": {
+        "evidence": [
+          "Test report (11 Sep 2026): 330 ops-backend, 440 platform-backend and 118 frontend tests passed, with typecheck and lint clean; 2 known backend failures are documented, not hidden.",
+          "AI-CIO backtest (19 Sep 2026): the opening forecast's top-10 hit rate was 27.8% against an 8.2% base rate (3.4× lift), with the direction right on 91% of real movers.",
+          "Operations, audit and validation reports live in the repository, including a performance report that states plainly what has not been measured yet.",
+          "Live product at algomatrics.in; the console screens above were captured from the running system."
+        ],
+        "measured_on": "02 Nov 2026",
+        "stats": {
+          "commits": 152,
+          "total_code_lines": 199859,
+          "test_files": 219,
+          "markdown_docs": 192,
+          "lines_by_language": {
+            "Python": 132823,
+            "TypeScript": 62740,
+            "YAML": 2212,
+            "Shell": 1306,
+            "CSS": 493,
+            "HTML": 229,
+            "JavaScript": 56
+          },
+          "first_commit": "2026-07-08",
+          "last_commit": "2026-10-26",
+          "commits_by_month": {
+            "2026-07": 90,
+            "2026-08": 23,
+            "2026-09": 14,
+            "2026-10": 25
+          }
+        }
+      }
     },
     {
       "name": "Autonomous Job Application Pipeline",
@@ -352,7 +419,145 @@
       "results": [
         "Code is public on GitHub.",
         "Offline test suite for the outreach rules (no double sends, threaded follow-ups, daily cap) that never touches the network."
-      ]
+      ],
+      "proof": {
+        "evidence": [
+          "Public repository with the full commit history.",
+          "Offline outreach test suite: 6 of 6 passing, with no network access.",
+          "This website is deployed from the repository by GitHub Actions."
+        ],
+        "measured_on": "02 Nov 2026",
+        "stats": {
+          "commits": 7,
+          "total_code_lines": 8896,
+          "test_files": 3,
+          "markdown_docs": 2,
+          "lines_by_language": {
+            "Python": 4658,
+            "JavaScript": 1929,
+            "CSS": 1522,
+            "HTML": 755,
+            "YAML": 32
+          },
+          "first_commit": "2026-10-03",
+          "last_commit": "2026-11-02",
+          "commits_by_month": {
+            "2026-10": 4,
+            "2026-11": 3
+          }
+        }
+      }
+    },
+    {
+      "name": "Research Copilot (RAG + open-source LLM)",
+      "slug": "research-copilot",
+      "category": "AI & Automation",
+      "featured": true,
+      "summary": "Retrieval-augmented generation over 299 of my own project documents, answered by Qwen2.5 running locally with Ollama, with every answer sentence checked against its source.",
+      "tech": [
+        "RAG",
+        "Open-source LLMs (Ollama)",
+        "Python",
+        "Prompt Engineering",
+        "Qwen2.5",
+        "nomic-embed-text",
+        "BM25",
+        "NumPy",
+        "FastAPI"
+      ],
+      "highlights": [
+        "Hybrid retrieval (BM25 + 768-dimensional dense embeddings, fused with reciprocal rank fusion) over 5,126 heading-aware chunks.",
+        "Measured on a labelled question set: retrieval hit@5 100%, MRR 0.708, and 2/2 out-of-scope questions correctly refused.",
+        "Grounding check: each answer sentence is cited to the passage it came from, and sentences no passage supports are flagged; on average 92% of an answer's sentences were grounded, and both sentences it flagged in the evaluation were genuinely unsupported.",
+        "Runs fully offline on a 4-core laptop CPU: no data leaves the machine, and secrets are redacted before indexing."
+      ],
+      "architecture": [
+        {
+          "layer": "Ingest",
+          "detail": "299 markdown docs from Algo Matrics, the research lab, RQIE and LLS; agent files, .env and confidential PDFs excluded."
+        },
+        {
+          "layer": "Redact",
+          "detail": "API keys, passwords, tokens and long hex secrets replaced with [redacted] before anything is stored."
+        },
+        {
+          "layer": "Chunk",
+          "detail": "Split at markdown headings into ~1,200-character chunks with overlap, keeping the heading path (5,126 chunks)."
+        },
+        {
+          "layer": "Embed",
+          "detail": "nomic-embed-text through Ollama with search_document / search_query prefixes; vectors normalised and saved with NumPy."
+        },
+        {
+          "layer": "Retrieve",
+          "detail": "BM25 and cosine similarity each rank 30 candidates; reciprocal rank fusion picks the top 5 passages."
+        },
+        {
+          "layer": "Generate",
+          "detail": "Qwen2.5 1.5B answers only from the numbered passages, reusing their wording, and says when the documents do not cover a question."
+        },
+        {
+          "layer": "Ground",
+          "detail": "Each answer sentence is matched to the passage that shares most of its words: cited if at least half its content words appear there, flagged as unsupported if not."
+        },
+        {
+          "layer": "Evaluate",
+          "detail": "Labelled questions score retrieval hit rate, MRR, expected facts, grounded sentences and refusals; results feed this page."
+        }
+      ],
+      "diagram": "flow",
+      "links": {
+        "github": "https://github.com/PrivateRaj18110/job-application-pipeline/tree/main/research_copilot",
+        "live": "",
+        "demo": ""
+      },
+      "overview": [
+        "Research Copilot answers questions about my own engineering and research work. It retrieves the most relevant passages from the documentation of Algo Matrics, my intraday research lab, RQIE and LLS, then asks an open-source LLM to answer using only those passages. A grounding check then cites the source of each sentence and flags any sentence the sources do not support.",
+        "Everything runs locally through Ollama on a laptop CPU, so private documents never leave the machine. An evaluation harness measures retrieval and answer quality on labelled questions, including questions it should refuse."
+      ],
+      "decisions": [
+        "Hybrid retrieval instead of dense-only: BM25 catches exact names like endpoint paths and strategy IDs, embeddings catch paraphrases, and reciprocal rank fusion combines them without tuning weights.",
+        "Grounding over fluency: the prompt forbids outside knowledge and the model must say when the documents do not cover a question.",
+        "Computed citations instead of model-written ones: asking the 1.5B model to write [n] citations gave either none or padded answers that stopped refusing off-topic questions, so citations come from sentence-to-passage word overlap, which also catches invented sentences.",
+        "Known limit, stated openly: the check proves a sentence came from a retrieved source, not that the source is current. One evaluation answer quoted an older test report (330 tests) instead of the newer one (340).",
+        "Small open model, measured honestly: Qwen2.5 1.5B fits a CPU-only machine; the evaluation reports its speed and accuracy instead of assuming them.",
+        "Privacy first: indexing redacts secrets and skips agent memory files, .env files and confidential PDFs; the index stays out of git."
+      ],
+      "results": [
+        "Retrieval: hit@1 50%, hit@5 100%, MRR 0.708 on 10 in-scope questions.",
+        "Answers: 64% of expected facts present, on average 92% of each answer's sentences grounded in a passage, 2/2 out-of-scope questions refused, 0 in-scope questions wrongly refused.",
+        "Speed: median 38.5 s per answer on an Intel N95 CPU; the 5,126-chunk index was embedded in about 2 hours 20 minutes."
+      ],
+      "gallery": [
+        {
+          "src": "assets/projects/research-copilot/copilot-answer.webp",
+          "caption": "An answer with a citation for each sentence, the grounding check, and the retrieved passages with their BM25, cosine and fusion scores."
+        },
+        {
+          "src": "assets/projects/research-copilot/copilot-flagged.webp",
+          "caption": "The grounding check catching a mistake: the model claimed VM2 forwards data to algomatrics.in (VM2 is algomatrics.in), and no passage supports it, so it is flagged."
+        },
+        {
+          "src": "assets/projects/research-copilot/copilot-refusal.webp",
+          "caption": "An out-of-scope question correctly refused instead of guessed."
+        }
+      ],
+      "proof": {
+        "evidence": [
+          "Index manifest: 299 documents, 5,126 chunks, 0 skipped, 768-dimensional vectors.",
+          "Evaluation scores for all 12 labelled questions, including 2 it must refuse, are in research_copilot/eval_summary.json.",
+          "Offline test suite: 5 of 5 passing with a fake LLM, covering redaction, chunking, BM25 and fusion, hybrid search and grounded answers.",
+          "Source code is in the public repository under research_copilot/."
+        ],
+        "measured_on": "02 Nov 2026",
+        "stats": {
+          "total_code_lines": 786,
+          "test_files": 1,
+          "lines_by_language": {
+            "Python": 786
+          }
+        }
+      }
     },
     {
       "name": "StudyPilot",
@@ -420,7 +625,32 @@
         "Live at studypilot-biw.pages.dev with working sign-up and email verification.",
         "Test suite for logic, components, content integrity and database security, run before every commit."
       ],
-      "featured": true
+      "featured": true,
+      "proof": {
+        "evidence": [
+          "Live site with working sign-up and email verification, deployed on Cloudflare Pages.",
+          "Test suite covers grading logic, components, content integrity and database security."
+        ],
+        "measured_on": "02 Nov 2026",
+        "stats": {
+          "commits": 37,
+          "total_code_lines": 29855,
+          "test_files": 29,
+          "markdown_docs": 21,
+          "lines_by_language": {
+            "TypeScript": 22761,
+            "SQL": 6754,
+            "CSS": 184,
+            "HTML": 104,
+            "JavaScript": 52
+          },
+          "first_commit": "2026-10-22",
+          "last_commit": "2026-10-31",
+          "commits_by_month": {
+            "2026-10": 37
+          }
+        }
+      }
     },
     {
       "name": "NIFTY / SENSEX Intraday Research Lab",
@@ -500,7 +730,14 @@
       "results": [
         "Phase 3: 1,104 of 1,705 features passed FDR and stability filters, but the best out-of-sample result was −3.98 bps after costs, so no strategy was promoted.",
         "Event discovery: 0 of 30 candidate events survived Holm-corrected validation on 11 out-of-sample sessions."
-      ]
+      ],
+      "proof": {
+        "evidence": [
+          "Every chart and dashboard on this page was generated by the research engines in the repository.",
+          "Live-runtime incidents are investigated read-only on the Google Cloud VM, with an evidence manifest and SHA-256-hashed sources for every finding."
+        ],
+        "measured_on": "02 Nov 2026"
+      }
     },
     {
       "name": "LLS: Low-Latency Trading Infrastructure",
@@ -559,7 +796,69 @@
       "results": [
         "214 C++ source files and 98 test files across unit, contract, failure, replay, performance and regression suites.",
         "ASan / UBSan sanitizer builds and the full acceptance matrix certified on the reference host, with each phase documented in its own report."
-      ]
+      ],
+      "diagrams": [
+        {
+          "title": "ML model architecture",
+          "caption": "From the LLS ML implementation blueprint (v2.0). Encoders are trained on training folds only, so validation embeddings never leak; TCN / CNN1D encoders, fusion, tree ensembles and calibration are implemented in C++.",
+          "style": "flow",
+          "steps": [
+            {
+              "layer": "Tick encoder",
+              "detail": "Micro-CNN learns intra-candle indicator trajectories from tick-level data."
+            },
+            {
+              "layer": "Timeframe encoders",
+              "detail": "Five TCNs (dilations 1, 2, 4, 8) turn each timeframe's candle window into a 64-dimensional embedding."
+            },
+            {
+              "layer": "Fusion",
+              "detail": "Transformer cross-attention fuses all timeframes into one market-state context."
+            },
+            {
+              "layer": "Signal heads",
+              "detail": "LightGBM heads trained on frozen out-of-sample embeddings, then calibrated."
+            },
+            {
+              "layer": "Regime",
+              "detail": "HMM regime model adds market-state information."
+            },
+            {
+              "layer": "Position control",
+              "detail": "PPO reinforcement learning sizes and manages the position."
+            },
+            {
+              "layer": "Risk gate",
+              "detail": "A hard risk gate has the final say before any order intent."
+            }
+          ]
+        }
+      ],
+      "proof": {
+        "evidence": [
+          "Per-phase completion and acceptance reports, including one gate that is honestly recorded as still open.",
+          "A black-box forensic journal and monitoring.v1 contract shared with Algo Matrics, validated with fixture packages.",
+          "Two design documents (system report, ML blueprint v2.0) define the model architecture shown above."
+        ],
+        "measured_on": "02 Nov 2026",
+        "stats": {
+          "commits": 19,
+          "total_code_lines": 58659,
+          "test_files": 147,
+          "markdown_docs": 49,
+          "lines_by_language": {
+            "C++": 47210,
+            "Python": 11053,
+            "Shell": 306,
+            "PowerShell": 90
+          },
+          "first_commit": "2026-09-04",
+          "last_commit": "2026-09-05",
+          "commits_by_month": {
+            "2026-09": 19
+          }
+        }
+      }
     },
     {
       "name": "RQIE: Quant Intelligence Engine",
@@ -617,7 +916,28 @@
       "results": [
         "Across 27 sessions, option-quote imbalance carried consistent but economically negligible information, so no executable edge was claimed.",
         "Two quote-reversal features passed discovery but did not survive cost and delay stress; they await a frozen confirmation on new data."
-      ]
+      ],
+      "proof": {
+        "evidence": [
+          "Workspace transfer verified file by file: all 834 files SHA-256 checked.",
+          "Phase status reports record each experiment's specification before results, and the negative findings."
+        ],
+        "measured_on": "02 Nov 2026",
+        "stats": {
+          "commits": 0,
+          "total_code_lines": 23230,
+          "test_files": 52,
+          "markdown_docs": 49,
+          "lines_by_language": {
+            "Python": 20082,
+            "YAML": 2722,
+            "SQL": 426
+          },
+          "first_commit": "",
+          "last_commit": "",
+          "commits_by_month": {}
+        }
+      }
     },
     {
       "name": "Audio / Visual Summarization",
@@ -686,5 +1006,164 @@
     "Reading",
     "Cycling"
   ],
-  "generated_at": "2026-11-02 15:16"
+  "system_map": {
+    "title": "How my projects connect",
+    "intro": "Research picks the strategies, a paper-trading runtime on Google Cloud runs them on live market data, and Algo Matrics on AWS monitors it and adds AI on top. LLS re-implements the strategy in C++ and is checked against the Python original so mistakes do not slip in. Research Copilot indexes the documentation of all of them and answers questions with citations.",
+    "width": 1130,
+    "height": 680,
+    "lanes": [
+      {
+        "x": 20,
+        "label": "Research"
+      },
+      {
+        "x": 320,
+        "label": "Live trading · Google Cloud"
+      },
+      {
+        "x": 620,
+        "label": "Platform · AWS"
+      },
+      {
+        "x": 900,
+        "label": "Intelligence"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "lab",
+        "label": "Intraday Research Lab",
+        "sub": "Feature, event and edge discovery with walk-forward, cost-aware validation",
+        "x": 20,
+        "y": 50,
+        "slug": "intraday-research",
+        "kind": "research"
+      },
+      {
+        "id": "rqie",
+        "label": "RQIE",
+        "sub": "Pre-registered experiments and BM25 search over past findings",
+        "x": 20,
+        "y": 330,
+        "slug": "rqie",
+        "kind": "research"
+      },
+      {
+        "id": "live",
+        "label": "LIVE paper runtime",
+        "sub": "Google Cloud VM1 · FlatTrade feed via native C++ · H30-X2, S2, S3 on 12 stocks",
+        "x": 320,
+        "y": 50,
+        "slug": "intraday-research",
+        "kind": "live"
+      },
+      {
+        "id": "lls",
+        "label": "LLS (C++20)",
+        "sub": "Strategy port checked by a differential oracle; TCN + Transformer model stack",
+        "x": 320,
+        "y": 330,
+        "slug": "lls",
+        "kind": "live"
+      },
+      {
+        "id": "algo",
+        "label": "Algo Matrics",
+        "sub": "algomatrics.in on AWS · ops receiver, console, risk controls",
+        "x": 620,
+        "y": 190,
+        "slug": "algo-matrics",
+        "kind": "platform"
+      },
+      {
+        "id": "assistant",
+        "label": "AI assistant",
+        "sub": "Claude via a pluggable provider; answers only from figures in the given context",
+        "x": 900,
+        "y": 50,
+        "slug": "algo-matrics",
+        "kind": "ai"
+      },
+      {
+        "id": "aicio",
+        "label": "AI-CIO movers radar",
+        "sub": "Forecasts major F&O moves and refits on every graded session",
+        "x": 900,
+        "y": 260,
+        "slug": "algo-matrics",
+        "kind": "ai"
+      },
+      {
+        "id": "nse",
+        "label": "NSE & news feeds",
+        "sub": "Filings, pre-open auction, open interest, headlines",
+        "x": 900,
+        "y": 440,
+        "kind": "external"
+      },
+      {
+        "id": "copilot",
+        "label": "Research Copilot (RAG)",
+        "sub": "Cited answers over 299 docs from all four projects · Qwen2.5 on Ollama, offline",
+        "x": 20,
+        "y": 520,
+        "slug": "research-copilot",
+        "kind": "ai"
+      }
+    ],
+    "edges": [
+      {
+        "from": "rqie",
+        "to": "lab",
+        "label": "findings"
+      },
+      {
+        "from": "lab",
+        "to": "live",
+        "label": "strategies"
+      },
+      {
+        "from": "lab",
+        "to": "lls",
+        "label": "Python reference"
+      },
+      {
+        "from": "live",
+        "to": "algo",
+        "label": "monitoring batches (HTTPS)"
+      },
+      {
+        "from": "lls",
+        "to": "algo",
+        "label": "monitoring.v1 export"
+      },
+      {
+        "from": "algo",
+        "to": "assistant",
+        "label": "live context"
+      },
+      {
+        "from": "nse",
+        "to": "aicio",
+        "label": "public data"
+      },
+      {
+        "from": "aicio",
+        "to": "algo",
+        "label": "forecasts"
+      },
+      {
+        "from": "rqie",
+        "to": "copilot",
+        "label": "docs"
+      },
+      {
+        "from": "lls",
+        "to": "copilot",
+        "label": "docs"
+      }
+    ],
+    "note": "Arrows show how data moves. The LIVE runtime trades on paper, and LLS routes no real orders. The VM1 → algomatrics.in link and the LLS export contract were built and verified end to end before release."
+  },
+  "generated_at": "2026-11-02 20:33"
 }

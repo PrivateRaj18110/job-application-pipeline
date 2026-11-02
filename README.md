@@ -115,6 +115,7 @@ The codebase is strictly confined to `c:/Users/Light/Documents/antigravity/livel
 | [`portfolio_builder.py`](portfolio_builder.py) | Builds the public portfolio site in `portfolio/` from `cv.json` and compiles the CV PDF it links and emails attach. | `markdown-pdf` |
 | [`portfolio/`](portfolio/) | Static visual CV website: skill meters, skill → project filter, project cards, experience timeline. Deployable to GitHub Pages. | HTML5, CSS3, ES6 JavaScript |
 | [`cold_emailer.py`](cold_emailer.py) | Cold outreach engine: contacts, zero-hallucination email drafts, SMTP sending with CV attached, threaded follow-ups, reply detection, daily caps. | `smtplib`, `imaplib`, Gemini / OpenAI |
+| [`research_copilot/`](research_copilot/) | RAG over project docs: redaction, heading-aware chunking, hybrid BM25 + embedding retrieval, local LLM answers, sentence grounding check, evaluation harness. | Ollama (Qwen2.5, nomic-embed-text), NumPy |
 
 ---
 
@@ -136,7 +137,7 @@ The codebase is strictly confined to `c:/Users/Light/Documents/antigravity/livel
 python portfolio_builder.py
 ```
 
-This writes `portfolio/cv.json`, compiles `portfolio/resume.pdf`, and stamps the page title and link-preview tags. Every project with a `slug` also gets a case-study page (`project.html?p=<slug>`) built from its `overview`, `gallery` (images in `portfolio/assets/projects/<slug>/`), `architecture` (drawn as a flow or layer diagram), `decisions` and `results`. Preview locally at **[http://127.0.0.1:8000/portfolio/](http://127.0.0.1:8000/portfolio/)** while the dashboard runs.
+This writes `portfolio/cv.json`, compiles `portfolio/resume.pdf`, and stamps the page title and link-preview tags. Every project with a `slug` also gets a case-study page (`project.html?p=<slug>`) built from its `overview`, `gallery` (images in `portfolio/assets/projects/<slug>/`), `architecture` (drawn as a flow or layer diagram), `decisions` and `results`. Optional extras: `diagrams` (more flow/layer charts per project), `proof` (measured commits, lines of code, test files and an evidence list) and a top-level `system_map` that draws how the projects connect on the home page. Preview locally at **[http://127.0.0.1:8000/portfolio/](http://127.0.0.1:8000/portfolio/)** while the dashboard runs.
 
 **Publish free on GitHub Pages:** push the `portfolio/` folder, then set **Settings → Pages → Source: GitHub Actions**. [`.github/workflows/portfolio.yml`](.github/workflows/portfolio.yml) redeploys on every change. Put the live URL in `profile.links.portfolio` so cold emails link to it. The phone number stays off the public site unless `profile.show_phone` is `true`.
 
@@ -159,6 +160,29 @@ python cold_emailer.py --import contacts.csv
 python cold_emailer.py --run-once            # drafts; sends too if EMAIL_AUTO_SEND=true
 python cold_emailer.py --daemon --interval 60
 python test_outreach.py                      # offline tests, never sends mail
+```
+
+---
+
+## 🔎 Research Copilot (RAG + open-source LLM)
+
+Retrieval-augmented generation over your own project docs, answered by an open-source model running locally through [Ollama](https://ollama.com). Nothing leaves the machine. Ask questions in the **Research Copilot (RAG)** tab or from the CLI.
+
+1. **Ingest:** markdown files listed in `copilot_sources.json` (copy `copilot_sources.example.json`). `.env` files, anything named secret/credential, agent memory files and `.git` are always skipped.
+2. **Redact & chunk:** API keys, passwords, tokens and long hex digests are replaced with `[redacted]`; docs are split at headings into ~1,200-character chunks that keep their heading path.
+3. **Embed:** `nomic-embed-text` vectors, checkpointed per chunk so an interrupted build resumes where it stopped.
+4. **Retrieve:** BM25 and cosine similarity each rank 30 candidates; reciprocal rank fusion keeps the top 5.
+5. **Answer:** `qwen2.5:1.5b` answers only from those passages, or replies "The documents do not cover this."
+6. **Ground:** each answer sentence is cited to the passage that shares most of its words; sentences no passage supports are flagged.
+
+On 299 docs (5,126 chunks) and 12 labelled questions: retrieval hit@5 100%, MRR 0.708; 64% of expected facts present; on average 92% of an answer's sentences grounded; 2/2 out-of-scope questions refused; median 38.5 s per answer on an Intel N95 CPU. Per-question scores are in [`research_copilot/eval_summary.json`](research_copilot/eval_summary.json); the full answers stay local in `copilot_index/eval_report.json` because they quote private docs.
+
+```bash
+ollama pull qwen2.5:1.5b && ollama pull nomic-embed-text
+python -m research_copilot build             # index the sources (resumable)
+python -m research_copilot ask "Why can LLS not route real-money orders?"
+python -m research_copilot eval              # retrieval + answer quality report
+python test_copilot.py                       # offline tests with a fake LLM
 ```
 
 ---

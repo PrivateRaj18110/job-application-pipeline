@@ -17,3 +17,7 @@ logs/
 contacts.json
 contacts.json.tmp
 output/emails/
+
+# Research Copilot: private source paths and the local index (contains private doc text)
+copilot_sources.json
+copilot_index/

@@ -218,6 +218,10 @@ class OutreachDaemonRequest(BaseModel):
     auto_send: bool = True
 
 
+class CopilotQuestion(BaseModel):
+    question: str
+
+
 # ---------------------------------------------------------------------------
 # Background Task Runners
 # ---------------------------------------------------------------------------
@@ -850,6 +854,60 @@ async def stop_outreach():
         outreach_task.cancel()
         return {"status": "stopped", "message": "Outreach stopped."}
     return {"status": "idle", "message": "Outreach was not running."}
+
+
+# ---------------------------------------------------------------------------
+# Research Copilot (RAG over project docs with a local open-source LLM)
+# ---------------------------------------------------------------------------
+_copilot = None
+
+
+def _get_copilot():
+    """Loads the index once; rebuilt indexes are picked up after a server restart."""
+    global _copilot
+    if _copilot is None:
+        from research_copilot.pipeline import Copilot
+        _copilot = Copilot()
+    return _copilot
+
+
+@app.get("/api/copilot/status")
+async def copilot_status():
+    from research_copilot.config import INDEX_DIR, Settings
+    from research_copilot.llm import Ollama, OllamaError
+
+    settings = Settings()
+    status = {"chat_model": settings.chat_model, "embed_model": settings.embed_model,
+              "ollama": False, "models_ready": False, "index": None, "eval": None}
+    try:
+        models = await asyncio.to_thread(Ollama(settings).available_models)
+        status["ollama"] = True
+        status["models_ready"] = all(any(m.startswith(want) for m in models)
+                                     for want in (settings.chat_model, settings.embed_model))
+    except OllamaError as e:
+        status["error"] = str(e)
+    for name, key in (("manifest.json", "index"), ("eval_report.json", "eval")):
+        path = INDEX_DIR / name
+        if path.exists():
+            data = json.loads(path.read_text(encoding="utf-8"))
+            status[key] = data.get("summary", data)
+    return status
+
+
+@app.post("/api/copilot/ask")
+async def copilot_ask(req: CopilotQuestion):
+    question = req.question.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Ask a question first.")
+    try:
+        copilot = await asyncio.to_thread(_get_copilot)
+        result = await asyncio.to_thread(copilot.ask, question[:500])
+    except FileNotFoundError:
+        raise HTTPException(status_code=409, detail="No index yet. Run: python -m research_copilot build")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Copilot failed: {e}")
+    logger.info("[LLM] Copilot answered in %.1fs (%s): %s", result["generation_seconds"], result["model"], question[:80])
+    return result
 
 
 if __name__ == "__main__":

@@ -1,0 +1,150 @@
+{
+  "summary": {
+    "evaluated_at": "2026-11-02T20:08:05",
+    "questions": 12,
+    "hit_at_1": 0.5,
+    "hit_at_5": 1.0,
+    "mrr": 0.708,
+    "fact_recall": 0.643,
+    "cited_answers": 1.0,
+    "supported_sentences": 0.917,
+    "unsupported_sentences": 2,
+    "abstained_out_of_scope": "2/2",
+    "false_abstentions": 0,
+    "median_answer_seconds": 38.5
+  },
+  "results": [
+    {
+      "question": "How does monitoring data get from VM1 on Google Cloud to algomatrics.in?",
+      "in_scope": true,
+      "hit_rank": 1,
+      "abstained": false,
+      "facts_found": 1,
+      "facts_total": 1,
+      "sentences": 3,
+      "supported_sentences": 2,
+      "seconds": 46.5
+    },
+    {
+      "question": "What does the AI-CIO movers radar predict?",
+      "in_scope": true,
+      "hit_rank": 2,
+      "abstained": false,
+      "facts_found": 1,
+      "facts_total": 1,
+      "sentences": 1,
+      "supported_sentences": 1,
+      "seconds": 38.5
+    },
+    {
+      "question": "What top-10 hit rate did the AI-CIO opening forecast reach in its backtest?",
+      "in_scope": true,
+      "hit_rank": 1,
+      "abstained": false,
+      "facts_found": 1,
+      "facts_total": 1,
+      "sentences": 1,
+      "supported_sentences": 1,
+      "seconds": 41.4
+    },
+    {
+      "question": "Which LLM provider powers the Algo Matrics AI assistant, and what happens when no API key is set?",
+      "in_scope": true,
+      "hit_rank": 3,
+      "abstained": false,
+      "facts_found": 2,
+      "facts_total": 2,
+      "sentences": 1,
+      "supported_sentences": 1,
+      "seconds": 32.9
+    },
+    {
+      "question": "What is the no-lookahead law in the confidence-based research harness?",
+      "in_scope": true,
+      "hit_rank": 1,
+      "abstained": false,
+      "facts_found": 0,
+      "facts_total": 1,
+      "sentences": 2,
+      "supported_sentences": 1,
+      "seconds": 31.0
+    },
+    {
+      "question": "What does LLS daily forensic recording store for each trading day?",
+      "in_scope": true,
+      "hit_rank": 4,
+      "abstained": false,
+      "facts_found": 2,
+      "facts_total": 2,
+      "sentences": 21,
+      "supported_sentences": 21,
+      "seconds": 53.9
+    },
+    {
+      "question": "Why can LLS not route real-money orders?",
+      "in_scope": true,
+      "hit_rank": 1,
+      "abstained": false,
+      "facts_found": 1,
+      "facts_total": 1,
+      "sentences": 2,
+      "supported_sentences": 2,
+      "seconds": 38.9
+    },
+    {
+      "question": "What did RQIE conclude about L1 option-quote imbalance?",
+      "in_scope": true,
+      "hit_rank": 1,
+      "abstained": false,
+      "facts_found": 1,
+      "facts_total": 1,
+      "sentences": 2,
+      "supported_sentences": 2,
+      "seconds": 43.9
+    },
+    {
+      "question": "How many ops-backend tests passed in the monitoring.v1 receiver test report?",
+      "in_scope": true,
+      "hit_rank": 2,
+      "abstained": false,
+      "facts_found": 0,
+      "facts_total": 1,
+      "sentences": 1,
+      "supported_sentences": 1,
+      "seconds": 28.2
+    },
+    {
+      "question": "Which strategies does the LIVE paper runtime trade?",
+      "in_scope": true,
+      "hit_rank": 2,
+      "abstained": false,
+      "facts_found": 0,
+      "facts_total": 3,
+      "sentences": 5,
+      "supported_sentences": 5,
+      "seconds": 38.5
+    },
+    {
+      "question": "What is the capital of France?",
+      "in_scope": false,
+      "hit_rank": 0,
+      "abstained": true,
+      "facts_found": 0,
+      "facts_total": 0,
+      "sentences": 0,
+      "supported_sentences": 0,
+      "seconds": 22.7
+    },
+    {
+      "question": "Which football club does Raj support?",
+      "in_scope": false,
+      "hit_rank": 0,
+      "abstained": true,
+      "facts_found": 0,
+      "facts_total": 0,
+      "sentences": 0,
+      "supported_sentences": 0,
+      "seconds": 27.2
+    }
+  ]
+}

@@ -165,6 +165,10 @@
         Cold Outreach
         <span class="tab-badge" id="tab-outreach-count">0</span>
       </button>
+      <button class="tab-btn" onclick="switchTab('copilot')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="8" y1="9" x2="16" y2="9"></line><line x1="8" y1="13" x2="13" y2="13"></line></svg>
+        Research Copilot (RAG)
+      </button>
     </nav>
 
     <!-- =========================================================
@@ -528,6 +532,41 @@
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TAB 8: RESEARCH COPILOT (RAG)
+    ========================================================== -->
+    <div id="tab-copilot" class="tab-content">
+      <div class="control-grid">
+        <div class="control-panel">
+          <div class="card">
+            <div class="card-title">RESEARCH COPILOT</div>
+            <p class="hint-text">
+              Retrieval-augmented generation over my project docs (Algo Matrics, research lab, RQIE, LLS), answered by an
+              open-source LLM running locally through Ollama. Each answer sentence is checked against the retrieved passages and cited, sentences no passage supports are flagged, and it says so when the documents do not cover a question.
+            </p>
+            <div class="kv-row"><span>Chat model</span><strong id="copilot-chat-model">—</strong></div>
+            <div class="kv-row"><span>Embeddings</span><strong id="copilot-embed-model">—</strong></div>
+            <div class="kv-row"><span>Indexed</span><strong id="copilot-index">—</strong></div>
+            <div class="kv-row"><span>Retrieval</span><strong>BM25 + dense, reciprocal rank fusion</strong></div>
+            <div class="mode-banner" id="copilot-banner" style="margin-top: 1rem;">Checking Ollama...</div>
+          </div>
+          <div class="card">
+            <div class="card-title">EVALUATION</div>
+            <div id="copilot-eval" class="hint-text">No evaluation run yet. Run <code>python -m research_copilot eval</code>.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span>ASK ABOUT MY PROJECTS</span></div>
+          <div class="copilot-suggestions" id="copilot-suggestions"></div>
+          <textarea id="copilot-question" class="form-input" rows="3" style="width: 100%;" placeholder="e.g. How does monitoring data get from VM1 to algomatrics.in?"></textarea>
+          <button class="btn btn-primary" id="btn-copilot-ask" onclick="askCopilot()" style="margin-top: 0.6rem;">Ask the copilot</button>
+          <div id="copilot-answer" class="copilot-answer" hidden></div>
+          <div id="copilot-sources" class="copilot-sources"></div>
         </div>
       </div>
     </div>

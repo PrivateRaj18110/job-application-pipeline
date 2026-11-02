@@ -6,7 +6,7 @@ privateraj49@gmail.com | Mumbai, India | [Portfolio](https://privateraj18110.git
 MBA Tech (Finance) and Computer Engineering graduate from NMIMS Mumbai. I build end-to-end Python systems: FastAPI services, LLM-powered automation, event-driven platforms on Docker and Kubernetes, and rigorous quantitative research pipelines. Internships at Tata Capital and NTPC taught me the business side that the code serves.
 
 ## Technical Skills
-- **AI & Automation**: LLM APIs, Prompt Engineering, Playwright, Machine Learning
+- **AI & Automation**: LLM APIs, RAG, Open-source LLMs (Ollama), Prompt Engineering, Playwright, Machine Learning
 - **Backend & Data**: Python, FastAPI, SQL, PostgreSQL, Redis, pandas, DuckDB
 - **Cloud & DevOps**: Docker, Kubernetes, AWS, Google Cloud, GitHub Actions, Git & GitHub, Prometheus & Grafana, Linux
 - **Systems & Frontend**: C++20, CMake, React, TypeScript
@@ -28,6 +28,14 @@ Live: [https://algomatrics.in](https://algomatrics.in)
 - Gemini / OpenAI resume tailoring under a zero-hallucination prompt, compiled to PDF for every role.
 - Playwright apply bot with human-like typing, consent handling, CAPTCHA detection and a screenshot audit trail.
 - Cold email engine with threaded follow-ups, IMAP reply detection and daily send limits.
+
+### Research Copilot (RAG + open-source LLM)
+*Tech Stack: RAG, Open-source LLMs (Ollama), Python, Prompt Engineering, Qwen2.5, nomic-embed-text, BM25, NumPy, FastAPI*
+- Retrieval-augmented generation over 299 of my own project documents, answered by Qwen2.5 running locally with Ollama, with every answer sentence checked against its source.
+- Hybrid retrieval (BM25 + 768-dimensional dense embeddings, fused with reciprocal rank fusion) over 5,126 heading-aware chunks.
+- Measured on a labelled question set: retrieval hit@5 100%, MRR 0.708, and 2/2 out-of-scope questions correctly refused.
+- Grounding check: each answer sentence is cited to the passage it came from, and sentences no passage supports are flagged; on average 92% of an answer's sentences were grounded, and both sentences it flagged in the evaluation were genuinely unsupported.
+- Runs fully offline on a 4-core laptop CPU: no data leaves the machine, and secrets are redacted before indexing.
 
 ### StudyPilot
 *Tech Stack: React, TypeScript, PostgreSQL, Supabase, Vite, Tailwind CSS, PWA*

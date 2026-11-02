@@ -315,6 +315,51 @@ a:hover { text-decoration: underline; }
 .lightbox img { display: block; max-width: 100%; max-height: calc(92vh - 110px); margin: 0 auto; border-radius: var(--radius-sm); }
 .lightbox p { margin-top: 10px; font-size: 0.9rem; color: var(--text-2); }
 .lightbox-close { position: absolute; top: 10px; right: 10px; }
+
+/* ------------------------------------------------------------- System map */
+.system-map {
+  overflow-x: auto; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px; -webkit-overflow-scrolling: touch;
+}
+.system-map svg { display: block; width: 100%; height: auto; }
+.map-lane { font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--muted); }
+.map-edge path { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+.map-edge rect { fill: var(--surface); stroke: var(--border); }
+.map-edge text { font-size: 11px; fill: var(--text-2); }
+#map-arrow path { fill: var(--muted); }
+.map-node-box { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.2; }
+.map-node-box.research { stroke: #0ea5a4; }
+.map-node-box.live { stroke: #f59e0b; }
+.map-node-box.platform { stroke: var(--accent); }
+.map-node-box.ai { stroke: #10b981; }
+.map-node-box.external { stroke-dasharray: 5 4; }
+.map-node-title { font-size: 14px; font-weight: 700; fill: var(--text); }
+.map-node-sub { font-size: 11.5px; fill: var(--text-2); }
+a.map-node:hover .map-node-box, a.map-node:focus-visible .map-node-box { stroke-width: 2.4; fill: var(--accent-soft); }
+.system-edges {
+  list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 6px 20px; margin-top: 14px; font-size: 0.88rem; color: var(--text-2);
+}
+.system-note { margin-top: 10px; font-size: 0.85rem; color: var(--muted); }
+
+/* ------------------------------------------------------------- Proof of work */
+.proof-stats { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); margin: 0 0 18px; max-width: 760px; }
+.lang-bar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; max-width: 760px; background: var(--meter-off); }
+.lang-0 { background: #6366f1; }
+.lang-1 { background: #0ea5a4; }
+.lang-2 { background: #f59e0b; }
+.lang-3 { background: #10b981; }
+.lang-4 { background: #94a3b8; }
+.lang-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 20px; font-size: 0.85rem; color: var(--text-2); }
+.lang-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.lang-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.lang-legend span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.commit-chart { display: flex; align-items: flex-end; gap: 6px; height: 120px; max-width: 760px; padding-bottom: 20px; }
+.commit-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; position: relative; }
+.commit-col span { width: 100%; max-width: 36px; background: var(--accent); border-radius: 4px 4px 0 0; }
+.commit-col em { position: absolute; bottom: -20px; font-style: normal; font-size: 0.72rem; color: var(--muted); }
+.proof-caption { font-size: 0.82rem; color: var(--muted); margin-top: 8px; }
+.proof-evidence { margin-top: 16px; }
 .empty-state { color: var(--muted); padding: 24px; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius); }
 
 /* ------------------------------------------------------------- Experience timeline */

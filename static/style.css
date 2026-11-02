@@ -1081,3 +1081,108 @@ select.form-input {
 }
 
 .log-msg .tag-email { color: #f472b6; font-weight: 600; }
+
+/* -------------------------------------------------------------
+   Tab 8: Research Copilot
+------------------------------------------------------------- */
+.copilot-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.filter-chip {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.filter-chip:hover {
+  border-color: var(--color-brand);
+  color: var(--text-primary);
+}
+
+.copilot-answer {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--color-success);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+}
+
+.copilot-answer-text {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.copilot-answer .cite {
+  color: #a5b4fc;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.copilot-meta {
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.copilot-grounding {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--color-success);
+}
+
+.copilot-grounding.warn {
+  color: var(--color-warning);
+}
+
+.copilot-grounding ul {
+  margin: 0.35rem 0 0 1.1rem;
+  padding: 0;
+}
+
+.copilot-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.copilot-source {
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.copilot-source.cited {
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.copilot-source-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.35rem;
+}
+
+.copilot-source-head span {
+  color: var(--text-muted);
+  word-break: break-all;
+}
+
+.copilot-source-text {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+}

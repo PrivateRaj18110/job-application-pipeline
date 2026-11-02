@@ -57,6 +57,7 @@ function switchTab(tabId) {
     loadContacts();
     populateJobSelect();
   }
+  if (tabId === 'copilot') loadCopilotStatus();
 }
 
 // ---------------------------------------------------------------------------
@@ -1171,6 +1172,119 @@ function updateOutreachControls(outreach) {
   // Keep the contact table live while a cycle runs, and refresh once when it finishes
   const outreachTabOpen = document.getElementById('tab-outreach').classList.contains('active');
   if (outreachTabOpen && (status !== 'idle' || wasBusy)) loadContacts();
+}
+
+// ---------------------------------------------------------------------------
+// Research Copilot (RAG with a local open-source LLM)
+// ---------------------------------------------------------------------------
+const COPILOT_SUGGESTIONS = [
+  'How does monitoring data get from VM1 on Google Cloud to algomatrics.in?',
+  'What does the AI-CIO movers radar predict, and how well did it backtest?',
+  'Why can LLS not route real-money orders?',
+  'What did RQIE conclude about option-quote imbalance?',
+];
+
+async function loadCopilotStatus() {
+  const box = document.getElementById('copilot-suggestions');
+  if (!box.children.length) {
+    box.innerHTML = COPILOT_SUGGESTIONS.map((q, i) =>
+      `<button class="filter-chip" type="button" data-index="${i}">${escapeHtml(q)}</button>`).join('');
+    box.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      document.getElementById('copilot-question').value = COPILOT_SUGGESTIONS[Number(b.dataset.index)];
+      askCopilot();
+    }));
+  }
+  try {
+    const res = await fetch('/api/copilot/status');
+    const s = await res.json();
+    document.getElementById('copilot-chat-model').textContent = s.chat_model;
+    document.getElementById('copilot-embed-model').textContent = s.embed_model;
+    document.getElementById('copilot-index').textContent = s.index
+      ? `${Object.values(s.index.documents || {}).reduce((a, b) => a + b, 0)} docs · ${s.index.chunks} chunks`
+      : 'Not built yet';
+
+    const banner = document.getElementById('copilot-banner');
+    if (!s.ollama) {
+      banner.className = 'mode-banner dry';
+      banner.innerHTML = '<strong>Ollama is not running</strong>Start the Ollama app, then reopen this tab.';
+    } else if (!s.models_ready || !s.index) {
+      banner.className = 'mode-banner dry';
+      banner.innerHTML = `<strong>Almost ready</strong>${!s.models_ready ? 'Pull the models with <code>ollama pull</code>. ' : ''}${!s.index ? 'Build the index: <code>python -m research_copilot build</code>.' : ''}`;
+    } else {
+      banner.className = 'mode-banner live';
+      banner.innerHTML = '<strong>Ready: running locally</strong>No data leaves this machine; the model runs on this CPU.';
+    }
+
+    if (s.eval) {
+      const e = s.eval;
+      document.getElementById('copilot-eval').innerHTML = `
+        <div class="kv-row"><span>Retrieval hit@5</span><strong>${Math.round(e.hit_at_5 * 100)}%</strong></div>
+        <div class="kv-row"><span>Retrieval MRR</span><strong>${e.mrr}</strong></div>
+        ${e.fact_recall !== undefined ? `
+          <div class="kv-row"><span>Expected facts in answers</span><strong>${Math.round(e.fact_recall * 100)}%</strong></div>
+          ${e.supported_sentences !== undefined ? `<div class="kv-row"><span>Sentences grounded in a source</span><strong>${Math.round(e.supported_sentences * 100)}%</strong></div>` : ''}
+          <div class="kv-row"><span>Out-of-scope refused</span><strong>${escapeHtml(e.abstained_out_of_scope)}</strong></div>
+          <div class="kv-row"><span>Median answer time</span><strong>${e.median_answer_seconds}s</strong></div>` : ''}
+        <div class="kv-row"><span>Questions</span><strong>${e.questions} · ${escapeHtml(formatWhen(e.evaluated_at))}</strong></div>`;
+    }
+  } catch (err) {
+    console.error('Copilot status failed:', err);
+  }
+}
+
+async function askCopilot() {
+  const question = document.getElementById('copilot-question').value.trim();
+  if (!question) {
+    showToast('Type a question first.', 'error');
+    return;
+  }
+  const btn = document.getElementById('btn-copilot-ask');
+  const answerBox = document.getElementById('copilot-answer');
+  const sourcesBox = document.getElementById('copilot-sources');
+  btn.disabled = true;
+  btn.textContent = 'Thinking (runs on the CPU, ~30-60 s)...';
+  answerBox.hidden = false;
+  answerBox.innerHTML = '<span class="hint-text">Retrieving passages and generating a grounded answer...</span>';
+  sourcesBox.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/copilot/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      answerBox.innerHTML = `<span class="hint-text">${escapeHtml(formatDetail(data.detail) || 'Copilot failed.')}</span>`;
+      return;
+    }
+    const answer = escapeHtml(data.answer).replace(/\[(\d+)\]/g, (m, n) =>
+      Number(n) <= data.sources.length ? `<a class="cite" href="#copilot-src-${n}">[${n}]</a>` : m);
+    const g = data.grounding || { sentences: 0, supported: 0, unsupported: [] };
+    const grounding = data.abstained ? '' : `
+      <div class="copilot-grounding ${g.unsupported.length ? 'warn' : 'ok'}">
+        Grounding check: ${g.supported} of ${g.sentences} sentences matched a retrieved passage.
+        ${g.unsupported.length ? `<ul>${g.unsupported.map(s => `<li>Not found in the sources: ${escapeHtml(s)}</li>`).join('')}</ul>` : ''}
+      </div>`;
+    answerBox.innerHTML = `
+      <div class="copilot-answer-text">${answer.replace(/\n/g, '<br>')}</div>
+      ${grounding}
+      <div class="copilot-meta">${escapeHtml(data.model)} via Ollama · retrieval ${data.retrieval_seconds}s · generation ${data.generation_seconds}s${data.tokens_per_second ? ` · ${data.tokens_per_second} tok/s` : ''}${data.abstained ? ' · declined: not in the documents' : ''}</div>`;
+    sourcesBox.innerHTML = data.sources.map((s, i) => `
+      <div class="copilot-source ${data.citations.includes(i + 1) ? 'cited' : ''}" id="copilot-src-${i + 1}">
+        <div class="copilot-source-head">
+          <strong>[${i + 1}] ${escapeHtml(s.source)}</strong>
+          <span>${escapeHtml(s.path)}${s.heading ? ` · ${escapeHtml(s.heading)}` : ''}</span>
+        </div>
+        <div class="copilot-source-text">${escapeHtml(s.text.length > 320 ? s.text.slice(0, 320) + '…' : s.text)}</div>
+        <div class="copilot-meta">RRF ${s.score} · BM25 ${s.bm25}${s.cosine !== null ? ` · cosine ${s.cosine}` : ''}${data.citations.includes(i + 1) ? ' · cited' : ''}</div>
+      </div>`).join('');
+  } catch (err) {
+    answerBox.innerHTML = `<span class="hint-text">Error: ${escapeHtml(String(err))}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Ask the copilot';
+  }
 }
 
 // ---------------------------------------------------------------------------

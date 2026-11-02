@@ -1,0 +1,14 @@
+{
+  "sources": [
+    {
+      "label": "My project",
+      "root": "C:/path/to/project/docs",
+      "include": ["**/*.md"],
+      "exclude": ["**/drafts/**"]
+    },
+    {
+      "label": "My project",
+      "root": "C:/path/to/project/README.md"
+    }
+  ]
+}
