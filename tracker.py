@@ -144,12 +144,14 @@ def build_overview() -> Dict[str, Any]:
 
     for row in sheet_manager.get_all_jobs():
         status = row.get("Application Status") or ""
+        stamp = STATUS_TIME.search(status)
         company(row.get("Company", ""))["applications"].append({
             "title": row.get("Job Title", ""),
             "url": row.get("Job URL", ""),
             "status": status,
             "state": application_state(status),
             "date_found": (row.get("Date Found") or "").replace(" ", "T"),
+            "status_at": stamp.group(1).replace(" ", "T") if stamp else "",
             "resume": Path(row["Tailored Resume Path"]).name if row.get("Tailored Resume Path") else "",
         })
     for contact in cold_emailer.load_contacts():

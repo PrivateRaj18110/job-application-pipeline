@@ -176,7 +176,7 @@ It is private by design: [`tracker.py`](tracker.py) keeps your stages and notes 
 tailscale serve --bg --http=80 http://127.0.0.1:8000    # tailnet only, survives restarts
 ```
 
-Then open `http://<laptop>.<tailnet>.ts.net` on the phone. Tailscale encrypts the connection between your devices, so the browser's "not secure" label for plain HTTP does not apply here. Only devices signed in to your Tailscale account can reach it; the laptop must be on with the dashboard running. Turn it off with `tailscale serve --http=80 off`.
+Then open `http://<laptop>.<tailnet>.ts.net` on the phone. That link is a **view-only status page** ([`static/status.html`](static/status.html)): jobs applied and their status, emails and replies, interviews, follow-ups due and recent activity, refreshed every minute. The link can only read that summary (`/api/summary`); the control dashboard, contacts, drafts, settings and every action are refused there and stay on the laptop, where `/status` shows the same page. Tailscale encrypts the connection between your devices, so the browser's "not secure" label for plain HTTP does not apply here. Only devices signed in to your Tailscale account can reach it; the laptop must be on with the dashboard running. Turn it off with `tailscale serve --http=80 off`. `python test_status_view.py` checks the view-only rules offline.
 
 ---
 

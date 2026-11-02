@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Job search status</title>
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --bg: #f6f7f9; --card: #ffffff; --text: #111827; --muted: #6b7280; --border: #e5e7eb;
+      --green: #059669; --green-bg: #d1fae5; --red: #dc2626; --red-bg: #fee2e2;
+      --amber: #b45309; --amber-bg: #fef3c7; --blue: #4f46e5; --blue-bg: #e0e7ff; --grey-bg: #f3f4f6;
+      --violet: #7c3aed; --violet-bg: #ede9fe;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b0f17; --card: #131a26; --text: #f1f5f9; --muted: #94a3b8; --border: #243049;
+        --green: #34d399; --green-bg: rgba(16,185,129,.15); --red: #f87171; --red-bg: rgba(239,68,68,.15);
+        --amber: #fbbf24; --amber-bg: rgba(245,158,11,.15); --blue: #a5b4fc; --blue-bg: rgba(99,102,241,.18); --grey-bg: rgba(148,163,184,.12);
+        --violet: #c4b5fd; --violet-bg: rgba(139,92,246,.18);
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    main { max-width: 960px; margin: 0 auto; padding: 16px 16px 40px; }
+    header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; margin-bottom: 14px; }
+    h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; }
+    h2 { font-size: 1rem; margin: 0 0 10px; }
+    .muted { color: var(--muted); font-size: .82rem; }
+    .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .75rem; font-weight: 600; white-space: nowrap; }
+    .green { color: var(--green); background: var(--green-bg); }
+    .red { color: var(--red); background: var(--red-bg); }
+    .amber { color: var(--amber); background: var(--amber-bg); }
+    .blue { color: var(--blue); background: var(--blue-bg); }
+    .grey { color: var(--muted); background: var(--grey-bg); }
+    .violet { color: var(--violet); background: var(--violet-bg); }
+    .meta { display: block; color: var(--muted); font-size: .78rem; }
+    .meta .due { color: var(--red); font-weight: 600; }
+    .bar-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+    @media (min-width: 640px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+    .kpi, section { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+    .kpi { padding: 12px 14px; }
+    .kpi .label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+    .kpi .value { font-size: 1.7rem; font-weight: 700; line-height: 1.2; }
+    .kpi.alert .value { color: var(--red); }
+    section { padding: 14px; margin-bottom: 14px; }
+    .stages { display: flex; height: 10px; border-radius: 6px; overflow: hidden; background: var(--grey-bg); margin-bottom: 10px; }
+    .stages i { display: block; height: 100%; }
+    .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .8rem; color: var(--muted); }
+    .legend b { color: var(--text); }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .chip { border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 999px; padding: 4px 11px; font-size: .8rem; cursor: pointer; }
+    .chip[aria-pressed="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+    ul.list { list-style: none; margin: 0; padding: 0; }
+    ul.list li { display: flex; justify-content: space-between; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); }
+    ul.list li:first-child { border-top: none; }
+    .item-main { min-width: 0; }
+    .item-main strong { display: block; }
+    .item-main a, .item-main span.title { color: var(--muted); text-decoration: none; font-size: .85rem; overflow-wrap: anywhere; }
+    .item-main a:hover { text-decoration: underline; }
+    .item-side { text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .empty { color: var(--muted); font-size: .88rem; padding: 6px 0; }
+    .error { color: var(--red); font-size: .85rem; }
+    footer { color: var(--muted); font-size: .78rem; text-align: center; margin-top: 18px; }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Job search status</h1>
+    <span class="muted" id="updated">Loading…</span>
+  </header>
+
+  <div class="bar-row" id="pipeline"></div>
+  <div class="kpis" id="kpis"></div>
+
+  <section>
+    <h2>Where things stand <span class="muted">by company</span></h2>
+    <div class="stages" id="stage-bar"></div>
+    <div class="legend" id="stage-legend"></div>
+  </section>
+
+  <section>
+    <h2>Jobs</h2>
+    <div class="chips" id="job-filters" role="toolbar" aria-label="Filter jobs"></div>
+    <ul class="list" id="jobs"></ul>
+  </section>
+
+  <section>
+    <h2>Emails</h2>
+    <ul class="list" id="emails"></ul>
+  </section>
+
+  <section>
+    <h2>Recent activity</h2>
+    <ul class="list" id="activity"></ul>
+  </section>
+
+  <footer>View-only. Changes happen through the pipeline on your laptop.</footer>
+</main>
+
+<script>
+  const APP_STATE = {
+    applied: ['Applied', 'green'], needs_you: ['Needs you', 'red'], staged: ['Form staged', 'blue'],
+    tailored: ['Resume ready', 'blue'], pending: ['Pending', 'amber'],
+  };
+  const EMAIL_STATE = {
+    new: ['New', 'grey'], drafted: ['Draft ready', 'grey'], previewed: ['Previewed', 'grey'], sent: ['Sent', 'blue'],
+    followed_up: ['Followed up', 'blue'], replied: ['Replied', 'green'], failed: ['Failed', 'red'], do_not_contact: ['Do not contact', 'grey'],
+  };
+  const STAGE_COLOR = {
+    in_progress: 'amber', needs_you: 'red', applied: 'green', emailed: 'blue', replied: 'green',
+    interview: 'violet', offer: 'violet', rejected: 'grey', not_interested: 'grey',
+  };
+  const RECENT_LIMIT = 12;
+  const JOB_FILTERS = [['all', 'All'], ['applied', 'Applied'], ['needs_you', 'Needs you'], ['open', 'In progress']];
+  let data = null;
+  let jobFilter = 'all';
+
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const safeUrl = u => /^https?:\/\//i.test(u || '') ? u : '';
+  const pill = ([label, color]) => `<span class="pill ${color}">${esc(label)}</span>`;
+  const when = iso => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return isNaN(d) ? iso : d.toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  };
+  const day = date => {
+    const d = new Date(`${date}T00:00:00`);
+    return isNaN(d) ? date : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  };
+  const todayIso = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+  const empty = text => `<li class="empty">${esc(text)}</li>`;
+
+  function render() {
+    const t = data.totals;
+    document.getElementById('updated').textContent = `Updated ${when(data.generated_at)} · refreshes every minute`;
+
+    const p = data.pipeline, o = data.outreach;
+    document.getElementById('pipeline').innerHTML =
+      pill([`Pipeline: ${p.status === 'idle' ? 'idle' : p.current_step}`, p.status === 'idle' ? 'grey' : 'blue']) +
+      pill([`Email outreach: ${o.status === 'idle' ? 'idle' : o.current_step}`, o.status === 'idle' ? 'grey' : 'blue']) +
+      (p.last_run_time ? pill([`Last run ${when(p.last_run_time)}`, 'grey']) : '');
+
+    const rate = t.reply_rate === null ? 'no emails yet' : `${Math.round(t.reply_rate * 100)}% reply rate`;
+    const kpis = [
+      ['Applied', t.applied, `+${data.today.applied} today`],
+      ['Needs you', t.needs_you, 'blocked or failed', t.needs_you > 0],
+      ['Emails sent', t.emails_sent, `${t.follow_ups_sent} follow-ups · ${data.today.emails} today`],
+      ['Replies', t.replies, rate],
+      ['Interviews', t.interviews, `${t.offers} offer${t.offers === 1 ? '' : 's'}`],
+      ['Follow-ups due', t.follow_ups_due, `${t.companies} companies tracked`, t.follow_ups_due > 0],
+    ];
+    document.getElementById('kpis').innerHTML = kpis.map(([label, value, sub, alert]) => `
+      <div class="kpi ${alert ? 'alert' : ''}">
+        <div class="label">${esc(label)}</div>
+        <div class="value">${esc(value)}</div>
+        <div class="muted">${esc(sub)}</div>
+      </div>`).join('');
+
+    const stages = Object.entries(data.funnel).filter(([, n]) => n > 0);
+    const total = stages.reduce((sum, [, n]) => sum + n, 0);
+    document.getElementById('stage-bar').innerHTML = stages
+      .map(([s, n]) => `<i style="width:${n / total * 100}%; background: var(--${STAGE_COLOR[s] === 'grey' ? 'muted' : STAGE_COLOR[s]})"></i>`).join('');
+    document.getElementById('stage-legend').innerHTML = total
+      ? stages.map(([s, n]) => `<span><span class="dot" style="background: var(--${STAGE_COLOR[s] === 'grey' ? 'muted' : STAGE_COLOR[s]})"></span>${esc(data.stage_labels[s])} <b>${n}</b></span>`).join('')
+      : '<span>No companies yet. They appear as the pipeline finds jobs and you add contacts.</span>';
+
+    renderJobs();
+
+    const contacts = data.companies.flatMap(c => c.contacts.map(x => ({ ...x, company: c.name })))
+      .sort((a, b) => (b.replied_at || b.first_sent_at || '').localeCompare(a.replied_at || a.first_sent_at || ''));
+    const today = todayIso();
+    document.getElementById('emails').innerHTML = contacts.length ? contacts.map(x => {
+      const sent = x.replied_at ? `Replied ${when(x.replied_at)}` : x.first_sent_at ? `Sent ${when(x.first_sent_at)}` : 'Not sent yet';
+      const due = x.follow_up_due
+        ? (x.follow_up_due <= today ? ` · <span class="due">follow-up due ${esc(day(x.follow_up_due))}</span>` : ` · follow-up ${esc(day(x.follow_up_due))}`)
+        : '';
+      return `
+        <li>
+          <div class="item-main">
+            <strong>${esc(x.name)}</strong>
+            <span class="title">${esc(x.company)}${x.role ? ` · ${esc(x.role)}` : ''}</span>
+            <span class="meta">${esc(sent)}${due}</span>
+          </div>
+          <div class="item-side">${pill(EMAIL_STATE[x.status] || [x.status, 'grey'])}</div>
+        </li>`;
+    }).join('') : empty('No emails yet.');
+
+    document.getElementById('activity').innerHTML = data.recent.length ? data.recent.slice(0, RECENT_LIMIT).map(e => `
+      <li>
+        <div class="item-main"><strong>${esc(e.company)}</strong><span class="title">${esc(e.text)}</span></div>
+        <div class="item-side"><span class="muted">${esc(when(e.at))}</span></div>
+      </li>`).join('') : empty('Nothing yet.');
+  }
+
+  function renderJobs() {
+    const jobs = data.applications;
+    const groups = {
+      all: jobs, applied: jobs.filter(j => j.state === 'applied'), needs_you: jobs.filter(j => j.state === 'needs_you'),
+      open: jobs.filter(j => !['applied', 'needs_you'].includes(j.state)),
+    };
+    document.getElementById('job-filters').innerHTML = JOB_FILTERS.map(([key, label]) =>
+      `<button class="chip" type="button" data-filter="${key}" aria-pressed="${jobFilter === key}">${esc(label)} ${groups[key].length}</button>`).join('');
+    document.querySelectorAll('#job-filters .chip').forEach(btn =>
+      btn.addEventListener('click', () => { jobFilter = btn.dataset.filter; renderJobs(); }));
+
+    const shown = groups[jobFilter];
+    document.getElementById('jobs').innerHTML = shown.length ? shown.map(j => {
+      const url = safeUrl(j.url);
+      const title = url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(j.title)} ↗</a>` : `<span class="title">${esc(j.title)}</span>`;
+      return `
+        <li>
+          <div class="item-main"><strong>${esc(j.company)}</strong>${title}</div>
+          <div class="item-side">
+            ${pill(APP_STATE[j.state] || [j.state, 'grey'])}
+            <span class="muted">${esc(when(j.status_at || j.date_found))}</span>
+          </div>
+        </li>`;
+    }).join('') : empty(jobs.length ? 'Nothing in this filter.' : 'No jobs yet. They appear here as the pipeline finds and applies to roles.');
+  }
+
+  async function refresh() {
+    try {
+      const res = await fetch('/api/summary', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      data = await res.json();
+      render();
+    } catch (err) {
+      document.getElementById('updated').innerHTML =
+        `<span class="error">Couldn't refresh (${esc(err.message)}). Is the laptop on and the dashboard running?</span>`;
+    }
+  }
+
+  refresh();
+  setInterval(refresh, 60000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+</script>
+</body>
+</html>

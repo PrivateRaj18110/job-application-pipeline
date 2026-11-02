@@ -162,6 +162,26 @@ app.add_middleware(
 # Rejects requests whose Host is not this machine (blocks DNS-rebinding attacks on the local server)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", *EXTRA_HOSTS])
 
+# The private remote link (e.g. Tailscale) is a view-only status page: it may read the summary and nothing
+# else, so it can never run the pipeline, send email, or read contacts, drafts and settings.
+REMOTE_HOSTS = {h.lower() for h in EXTRA_HOSTS}
+VIEW_ONLY_ROUTES = {("GET", "/"), ("GET", "/status"), ("GET", "/api/summary")}
+
+
+def _status_page() -> HTMLResponse:
+    return HTMLResponse((STATIC_DIR / "status.html").read_text(encoding="utf-8"))
+
+
+@app.middleware("http")
+async def view_only_remote_access(request: Request, call_next):
+    host = request.headers.get("host", "").split(":")[0].lower()
+    if host in REMOTE_HOSTS:
+        if (request.method, request.url.path) not in VIEW_ONLY_ROUTES:
+            return JSONResponse({"detail": "This link is view-only."}, status_code=403)
+        if request.url.path == "/":
+            return _status_page()
+    return await call_next(request)
+
 # Mount static asset routes
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.mount("/output", StaticFiles(directory=str(OUTPUT_DIR)), name="output")
@@ -410,6 +430,43 @@ async def serve_dashboard():
         )
     with open(index_file, "r", encoding="utf-8") as f:
         return HTMLResponse(f.read())
+
+
+@app.get("/status", response_class=HTMLResponse)
+async def serve_status_page():
+    """View-only job-search status page (what the private phone link shows)."""
+    return _status_page()
+
+
+@app.get("/api/summary")
+async def get_summary():
+    """Read-only summary for the status page: applications, emails, stages, activity and pipeline state."""
+    overview = await asyncio.to_thread(tracker.build_overview)
+    today = datetime.now().date().isoformat()
+    applications = sorted(
+        ({**a, "company": c["name"]} for c in overview["companies"] for a in c["applications"]),
+        key=lambda a: a["status_at"] or a["date_found"], reverse=True,
+    )
+    try:
+        emails_today = cold_emailer.sent_today(cold_emailer.load_contacts())
+    except ValueError:
+        emails_today = 0
+    return {
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "pipeline": {k: pipeline_state[k] for k in ("status", "current_step", "last_run_time")},
+        "outreach": {k: outreach_state[k] for k in ("status", "current_step", "last_run_time")},
+        "today": {
+            "applied": sum(1 for a in applications if a["state"] == "applied" and a["status_at"].startswith(today)),
+            "emails": emails_today,
+        },
+        "totals": overview["totals"],
+        "funnel": overview["funnel"],
+        "stage_labels": overview["stage_labels"],
+        "applications": applications,
+        "companies": [{k: c[k] for k in ("name", "stage", "stage_label", "contacts", "next_follow_up",
+                                         "follow_up_overdue", "last_activity")} for c in overview["companies"]],
+        "recent": overview["recent"],
+    }
 
 
 @app.get("/api/status")
