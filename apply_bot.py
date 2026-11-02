@@ -10,11 +10,12 @@ All file operations and screenshot outputs are strictly anchored to the project 
 
 import os
 import re
+import json
 import random
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Tuple, Optional
+from typing import Any, Dict, Tuple, Optional
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright, Page, Browser, TimeoutError as PlaywrightTimeoutError
 
@@ -28,17 +29,29 @@ BASE_DIR = Path(__file__).resolve().parent
 SCREENSHOTS_DIR = BASE_DIR / "logs" / "screenshots"
 SCREENSHOTS_DIR.mkdir(parents=True, exist_ok=True)
 
-# Applicant profile (Source of truth: Master Resume)
+def _load_cv_profile() -> Dict[str, Any]:
+    """Applicant identity from cv.json, the structured CV source of truth."""
+    try:
+        with open(BASE_DIR / "cv.json", "r", encoding="utf-8") as f:
+            return json.load(f).get("profile", {})
+    except (OSError, ValueError):
+        return {}
+
+
+# Applicant profile: APPLICANT_* environment variables override cv.json when set
+_profile = _load_cv_profile()
+_name_parts = _profile.get("name", "").split()
+_links = _profile.get("links", {})
 DEFAULT_APPLICANT = {
-    "full_name": os.getenv("APPLICANT_FULL_NAME", "Alex Rivera"),
-    "first_name": os.getenv("APPLICANT_FIRST_NAME", "Alex"),
-    "last_name": os.getenv("APPLICANT_LAST_NAME", "Rivera"),
-    "email": os.getenv("APPLICANT_EMAIL", "alex.rivera.dev@example.com"),
-    "phone": os.getenv("APPLICANT_PHONE", "+1-555-0199"),
-    "linkedin": os.getenv("APPLICANT_LINKEDIN", "https://www.linkedin.com/in/alexrivera-dev"),
-    "github": os.getenv("APPLICANT_GITHUB", "https://github.com/alexrivera-dev"),
-    "portfolio": os.getenv("APPLICANT_PORTFOLIO", "https://alexrivera.dev"),
-    "location": "San Francisco, CA",
+    "full_name": os.getenv("APPLICANT_FULL_NAME") or _profile.get("name", ""),
+    "first_name": os.getenv("APPLICANT_FIRST_NAME") or (_name_parts[0] if _name_parts else ""),
+    "last_name": os.getenv("APPLICANT_LAST_NAME") or " ".join(_name_parts[1:]),
+    "email": os.getenv("APPLICANT_EMAIL") or _profile.get("email", ""),
+    "phone": os.getenv("APPLICANT_PHONE") or _profile.get("phone", ""),
+    "linkedin": os.getenv("APPLICANT_LINKEDIN") or _links.get("linkedin", ""),
+    "github": os.getenv("APPLICANT_GITHUB") or _links.get("github", ""),
+    "portfolio": os.getenv("APPLICANT_PORTFOLIO") or _links.get("portfolio", ""),
+    "location": _profile.get("location", ""),
 }
 
 

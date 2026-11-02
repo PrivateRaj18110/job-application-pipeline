@@ -9,6 +9,12 @@ let currentFilter = 'all';
 let currentSearch = '';
 let activeStage = null;
 let eventSource = null;
+let allContacts = [];
+let contactStatuses = {};
+let outreachSettings = {};
+let contactSearch = '';
+let editingContactId = null;
+let cvView = 'editor';
 
 // ---------------------------------------------------------------------------
 // Initialization
@@ -20,6 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadGallery();
   loadTargetsConfig();
   loadMasterResume();
+  loadCv();
+  loadContacts();
 
   // Poll system status every 3 seconds
   setInterval(fetchStatus, 3000);
@@ -44,6 +52,11 @@ function switchTab(tabId) {
   if (tabId === 'gallery') loadGallery();
   if (tabId === 'targets') loadTargetsConfig();
   if (tabId === 'resume') loadMasterResume();
+  if (tabId === 'portfolio') loadCv();
+  if (tabId === 'outreach') {
+    loadContacts();
+    populateJobSelect();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -96,6 +109,18 @@ async function fetchStatus() {
     updateEnvBadge('env-llm', env.gemini_api_key || env.openai_api_key, 'Gemini / OpenAI API Configured');
     updateEnvBadge('env-sheet', env.google_sheet_configured || env.service_account_exists, 'Google Sheets Linked');
     updateEnvBadge('env-auto-submit', env.auto_submit_enabled, 'Auto-Submit Active');
+    updateEnvBadge('env-email', env.smtp_configured, 'SMTP Email Sending');
+
+    // Candidate identity comes from cv.json
+    const candidate = data.candidate || {};
+    if (candidate.name) {
+      document.getElementById('candidate-name').textContent = candidate.name;
+      document.getElementById('candidate-avatar').textContent =
+        candidate.name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+    }
+    if (candidate.role) document.getElementById('candidate-role').textContent = candidate.role;
+
+    updateOutreachControls(data.outreach || {});
 
     // Highlight Architecture Flow Node based on step
     highlightFlowNodeByStep(p.current_step || '');
@@ -183,6 +208,7 @@ function appendLogToConsole(log) {
   msg = msg.replace(/\[APPLY\]/g, '<span class="tag-apply">[APPLY]</span>');
   msg = msg.replace(/\[AUDIT\]/g, '<span class="tag-audit">[AUDIT]</span>');
   msg = msg.replace(/\[SKIP\]/g, '<span class="tag-skip">[SKIP]</span>');
+  msg = msg.replace(/\[EMAIL\]/g, '<span class="tag-email">[EMAIL]</span>');
   msg = msg.replace(/\[OK\]/g, '<span style="color: #34d399; font-weight: bold;">[OK]</span>');
   msg = msg.replace(/\[LOG\]/g, '<span style="color: #60a5fa; font-weight: bold;">[LOG]</span>');
 
@@ -596,6 +622,555 @@ async function saveMasterResume() {
   } catch (err) {
     showToast(`Error: ${err}`, 'error');
   }
+}
+
+// ---------------------------------------------------------------------------
+// Portfolio & Structured CV Editor
+// ---------------------------------------------------------------------------
+let cvDirty = false;
+
+async function loadCv() {
+  try {
+    const res = await fetch('/api/cv');
+    if (!res.ok) return;
+    const data = await res.json();
+    const textarea = document.getElementById('textarea-cv-json');
+    if (textarea && !cvDirty) {
+      textarea.value = JSON.stringify(data.cv, null, 2);
+      textarea.oninput = () => { cvDirty = true; };
+    }
+    document.getElementById('portfolio-built-at').textContent = data.built_at || 'Never';
+    document.getElementById('portfolio-pdf-link').style.display = data.pdf_url ? '' : 'none';
+  } catch (err) {
+    console.error('Failed to load CV:', err);
+  }
+}
+
+async function saveCv() {
+  const textarea = document.getElementById('textarea-cv-json');
+  let parsed;
+  try {
+    parsed = JSON.parse(textarea.value);
+  } catch (e) {
+    showToast(`Invalid JSON: ${e.message}`, 'error');
+    return;
+  }
+
+  showToast('Saving CV and rebuilding the portfolio...', 'info');
+  try {
+    const res = await fetch('/api/cv', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cv: parsed })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      cvDirty = false;
+      showToast('CV saved. Portfolio and CV PDF rebuilt.', 'success');
+      loadCv();
+      refreshPortfolioPreview();
+      fetchStatus();
+    } else {
+      showToast(formatDetail(data.detail) || 'Failed to save CV.', 'error');
+    }
+  } catch (err) {
+    showToast(`Error: ${err}`, 'error');
+  }
+}
+
+async function syncMasterResume() {
+  if (!confirm('Replace master_resume.md with the content of cv.json? Resume tailoring uses master_resume.md as its source of truth.')) return;
+  try {
+    const res = await fetch('/api/cv/sync-master', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      showToast(data.message, 'success');
+      loadMasterResume();
+    } else {
+      showToast(formatDetail(data.detail) || 'Failed to sync master resume.', 'error');
+    }
+  } catch (err) {
+    showToast(`Error: ${err}`, 'error');
+  }
+}
+
+function setCvView(view) {
+  cvView = view;
+  document.getElementById('textarea-cv-json').style.display = view === 'editor' ? '' : 'none';
+  document.getElementById('portfolio-preview').style.display = view === 'preview' ? '' : 'none';
+  document.getElementById('seg-cv-editor').classList.toggle('active', view === 'editor');
+  document.getElementById('seg-cv-preview').classList.toggle('active', view === 'preview');
+  refreshPortfolioPreview();
+}
+
+function refreshPortfolioPreview() {
+  if (cvView !== 'preview') return;
+  document.getElementById('portfolio-preview').src = `/portfolio/?t=${Date.now()}`;
+}
+
+// ---------------------------------------------------------------------------
+// Cold Outreach: Contacts, Drafts & Automation
+// ---------------------------------------------------------------------------
+const CONTACT_STATUS_CLASS = {
+  new: 'pending',
+  drafted: 'tailored',
+  previewed: 'tailored',
+  sent: 'applied',
+  followed_up: 'applied',
+  replied: 'replied',
+  failed: 'failed',
+  do_not_contact: 'muted',
+};
+
+let outreachAutoSendInitialized = false;
+let currentOutreachStatus = 'idle';
+
+async function loadContacts() {
+  try {
+    const res = await fetch('/api/contacts');
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(formatDetail(data.detail) || 'Failed to load contacts.', 'error');
+      return;
+    }
+    allContacts = data.contacts || [];
+    contactStatuses = data.statuses || {};
+    outreachSettings = Object.assign({}, data.settings || {}, { opt_out_line: data.opt_out_line });
+
+    if (!outreachAutoSendInitialized) {
+      document.getElementById('chk-outreach-auto-send').checked = !!outreachSettings.auto_send;
+      outreachAutoSendInitialized = true;
+    }
+    renderOutreachMetrics(data.stats || {});
+    renderModeBanner();
+    renderContactsTable();
+  } catch (err) {
+    console.error('Failed to load contacts:', err);
+  }
+}
+
+function renderOutreachMetrics(stats) {
+  const emailed = (stats.sent || 0) + (stats.followed_up || 0) + (stats.replied || 0);
+  const replies = stats.replied || 0;
+  document.getElementById('metric-contacts').textContent = stats.total || 0;
+  document.getElementById('metric-drafts').textContent = (stats.drafted || 0) + (stats.previewed || 0);
+  document.getElementById('metric-sent').textContent = emailed;
+  document.getElementById('metric-sent-today').textContent =
+    `${stats.sent_today || 0} today · limit ${outreachSettings.daily_limit || 0}/day`;
+  document.getElementById('metric-replies').textContent = replies;
+  document.getElementById('metric-reply-rate').textContent =
+    emailed ? `Reply rate: ${Math.round((replies / emailed) * 100)}%` : 'Reply rate: n/a';
+  document.getElementById('tab-outreach-count').textContent = stats.total || 0;
+}
+
+function renderModeBanner() {
+  const banner = document.getElementById('outreach-mode-banner');
+  const s = outreachSettings;
+  if (s.dry_run) {
+    banner.className = 'mode-banner dry';
+    banner.innerHTML = s.smtp_configured
+      ? `<strong>Dry run: nothing is sent</strong>SMTP is set up for ${escapeHtml(s.smtp_user)}. Set <code>EMAIL_DRY_RUN=false</code> in <code>.env</code> and restart to send for real.`
+      : `<strong>Dry run: nothing is sent</strong>Emails are saved as previews in <code>output/emails/</code>. Add <code>SMTP_USER</code> and <code>SMTP_APP_PASSWORD</code> to <code>.env</code> and set <code>EMAIL_DRY_RUN=false</code> to send for real.`;
+  } else {
+    banner.className = 'mode-banner live';
+    banner.innerHTML = `<strong>Live: sending as ${escapeHtml(s.smtp_user)}</strong>Up to ${s.daily_limit} emails/day, ${s.max_followups} follow-up after ${s.followup_days} days. Stops as soon as someone replies.`;
+  }
+}
+
+function searchContacts(query) {
+  contactSearch = (query || '').toLowerCase().trim();
+  renderContactsTable();
+}
+
+function renderContactsTable() {
+  const tbody = document.getElementById('contacts-table-body');
+  if (!tbody) return;
+
+  const filtered = allContacts.filter(c => {
+    if (!contactSearch) return true;
+    return [c.name, c.email, c.company, c.role].some(v => (v || '').toLowerCase().includes(contactSearch));
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">
+          ${allContacts.length ? 'No contacts match your search.' : 'No contacts yet. Add one on the left or import a CSV.'}
+        </td>
+      </tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(c => {
+    const statusClass = CONTACT_STATUS_CLASS[c.status] || 'pending';
+    const hasDraft = c.subject && c.body;
+    const last = (c.history || []).slice(-1)[0];
+    const activity = last
+      ? `${historyLabel(last)} · ${formatWhen(last.at)}`
+      : `Added · ${formatWhen(c.created_at)}`;
+    const jobLink = c.job_url
+      ? `<a href="${escapeHtml(c.job_url)}" target="_blank" rel="noopener" style="color: var(--color-brand); font-size: 0.72rem; text-decoration: none;">Linked job ↗</a>`
+      : '';
+
+    return `
+      <tr>
+        <td>
+          <div style="font-weight: 700; color: var(--text-primary);">${escapeHtml(c.name || '(no name)')}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(c.email)}</div>
+        </td>
+        <td>
+          <div style="font-weight: 600;">${escapeHtml(c.company || '—')}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(c.role || '')} ${jobLink}</div>
+        </td>
+        <td>
+          <span class="status-tag ${statusClass}" title="${escapeHtml(c.last_error || '')}">● ${escapeHtml(contactStatuses[c.status] || c.status)}</span>
+        </td>
+        <td style="color: var(--text-muted); font-size: 0.75rem;">${escapeHtml(activity)}</td>
+        <td>
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <button class="btn btn-outline btn-xs" onclick="openEmailModal('${c.id}')">${hasDraft ? '✉️ View Email' : '✍️ Draft Email'}</button>
+            <button class="btn btn-danger btn-xs" onclick="deleteContact('${c.id}')">Delete</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function historyLabel(entry) {
+  const kind = entry.kind === 'follow_up' || entry.type === 'follow_up' ? 'Follow-up' : 'Email';
+  switch (entry.type) {
+    case 'initial': return 'Email sent';
+    case 'follow_up': return 'Follow-up sent';
+    case 'preview': return `${kind} previewed`;
+    case 'reply': return 'Reply received';
+    case 'error': return `${kind} failed`;
+    default: return entry.type;
+  }
+}
+
+function formatWhen(iso) {
+  if (!iso) return '';
+  return iso.replace('T', ' ').substring(0, 16);
+}
+
+function formatDetail(detail) {
+  if (!detail) return '';
+  if (Array.isArray(detail)) return detail.map(d => d.msg || JSON.stringify(d)).join('; ');
+  return String(detail);
+}
+
+async function populateJobSelect() {
+  if (!allJobsData.length) await loadJobsList();
+  const select = document.getElementById('contact-job');
+  const current = select.value;
+  select.innerHTML = '<option value="">None</option>' + allJobsData
+    .filter(j => j.job_url)
+    .map(j => `<option value="${escapeHtml(j.job_url)}">${escapeHtml(j.title)} · ${escapeHtml(j.company)}</option>`)
+    .join('');
+  select.value = current;
+  select.onchange = () => {
+    const job = allJobsData.find(j => j.job_url === select.value);
+    if (!job) return;
+    const company = document.getElementById('contact-company');
+    const role = document.getElementById('contact-role');
+    if (!company.value) company.value = job.company || '';
+    if (!role.value) role.value = job.title || '';
+  };
+}
+
+async function addContact() {
+  const fields = ['name', 'email', 'company', 'role', 'notes'];
+  const payload = {};
+  fields.forEach(f => { payload[f] = document.getElementById(`contact-${f}`).value.trim(); });
+  payload.job_url = document.getElementById('contact-job').value;
+
+  if (!payload.email) {
+    showToast('Email is required.', 'error');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/contacts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (res.ok) {
+      fields.forEach(f => { document.getElementById(`contact-${f}`).value = ''; });
+      document.getElementById('contact-job').value = '';
+      showToast(`Added ${data.contact.name || data.contact.email}.`, 'success');
+      loadContacts();
+    } else {
+      showToast(formatDetail(data.detail) || 'Failed to add contact.', 'error');
+    }
+  } catch (err) {
+    showToast(`Error: ${err}`, 'error');
+  }
+}
+
+function loadCsvFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { document.getElementById('textarea-csv').value = reader.result; };
+  reader.readAsText(file);
+}
+
+async function importCsv() {
+  const csvText = document.getElementById('textarea-csv').value.trim();
+  if (!csvText) {
+    showToast('Paste CSV text or choose a CSV file first.', 'error');
+    return;
+  }
+  try {
+    const res = await fetch('/api/contacts/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ csv_text: csvText })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      const skipped = data.skipped || [];
+      const note = skipped.length ? ` Skipped ${skipped.length}: ${skipped.slice(0, 2).join(' ')}` : '';
+      showToast(`Imported ${data.added} contact(s).${note}`, skipped.length && !data.added ? 'error' : 'success');
+      document.getElementById('textarea-csv').value = '';
+      document.getElementById('input-csv-file').value = '';
+      loadContacts();
+    } else {
+      showToast(formatDetail(data.detail) || 'CSV import failed.', 'error');
+    }
+  } catch (err) {
+    showToast(`Error: ${err}`, 'error');
+  }
+}
+
+async function deleteContact(contactId) {
+  const contact = allContacts.find(c => c.id === contactId);
+  if (!contact || !confirm(`Delete ${contact.name || contact.email} and their email history?`)) return;
+  const res = await fetch(`/api/contacts/${contactId}`, { method: 'DELETE' });
+  if (res.ok) {
+    showToast('Contact deleted.', 'success');
+    loadContacts();
+  } else {
+    showToast('Failed to delete contact.', 'error');
+  }
+}
+
+async function openEmailModal(contactId) {
+  let contact = allContacts.find(c => c.id === contactId);
+  if (!contact) return;
+
+  const alreadyEmailed = (contact.history || []).some(h => h.type === 'initial');
+  if (!(contact.subject && contact.body) && !alreadyEmailed) {
+    showToast(`Drafting email for ${contact.name || contact.email}...`, 'info');
+    const res = await fetch(`/api/contacts/${contactId}/draft`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(formatDetail(data.detail) || 'Drafting failed.', 'error');
+      return;
+    }
+    contact = data.contact;
+    loadContacts();
+  }
+
+  editingContactId = contactId;
+  fillEmailModal(contact);
+  document.getElementById('email-modal').classList.add('open');
+}
+
+function fillEmailModal(contact) {
+  const alreadyEmailed = (contact.history || []).some(h => h.type === 'initial');
+  const closed = contact.status === 'replied' || contact.status === 'do_not_contact';
+  const locked = alreadyEmailed || closed;
+
+  document.getElementById('email-modal-title').textContent =
+    `${alreadyEmailed ? 'Sent Email' : 'Email Draft'}: ${contact.name || contact.email}${contact.company ? ` (${contact.company})` : ''}`;
+  document.getElementById('email-modal-to').textContent = contact.name ? `${contact.name} <${contact.email}>` : contact.email;
+
+  const subject = document.getElementById('email-subject');
+  const body = document.getElementById('email-body');
+  subject.value = contact.subject || '';
+  body.value = contact.body || '';
+  subject.readOnly = alreadyEmailed;
+  body.readOnly = alreadyEmailed;
+
+  const sendBtn = document.getElementById('btn-email-send');
+  sendBtn.textContent = outreachSettings.dry_run ? 'Save Preview (Dry Run)' : 'Send Now';
+  sendBtn.disabled = locked;
+  document.getElementById('btn-email-regenerate').disabled = locked;
+  document.getElementById('btn-email-save').disabled = alreadyEmailed;
+
+  document.getElementById('email-modal-footer-note').innerHTML = alreadyEmailed
+    ? 'This email has been sent. Follow-ups go out automatically when the daemon runs with auto-send on.'
+    : `The line <em>"${escapeHtml(outreachSettings.opt_out_line || '')}"</em> and your signature are added automatically, and your CV PDF is attached.`;
+
+  const statusSelect = document.getElementById('email-status');
+  statusSelect.innerHTML = Object.entries(contactStatuses)
+    .map(([key, label]) => `<option value="${key}" ${key === contact.status ? 'selected' : ''}>Status: ${escapeHtml(label)}</option>`)
+    .join('');
+
+  document.getElementById('email-history').innerHTML = (contact.history || []).map(h => `
+    <div class="email-history-item">
+      <time>${escapeHtml(formatWhen(h.at))}</time>
+      <span>${escapeHtml(historyLabel(h))}${h.subject ? `: ${escapeHtml(h.subject)}` : ''}${h.type === 'error' || h.type === 'preview' ? ` (${escapeHtml(h.detail || '')})` : ''}</span>
+    </div>`).join('');
+}
+
+function closeEmailModal() {
+  editingContactId = null;
+  document.getElementById('email-modal').classList.remove('open');
+}
+
+async function saveEmailDraft(silent = false) {
+  if (!editingContactId) return false;
+  const res = await fetch(`/api/contacts/${editingContactId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      subject: document.getElementById('email-subject').value,
+      body: document.getElementById('email-body').value
+    })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    showToast(formatDetail(data.detail) || 'Failed to save draft.', 'error');
+    return false;
+  }
+  if (!silent) showToast('Draft saved.', 'success');
+  loadContacts();
+  return true;
+}
+
+async function regenerateDraft() {
+  if (!editingContactId) return;
+  if (!confirm('Replace the current draft with a newly generated one?')) return;
+  showToast('Regenerating draft...', 'info');
+  const res = await fetch(`/api/contacts/${editingContactId}/draft`, { method: 'POST' });
+  const data = await res.json();
+  if (res.ok) {
+    fillEmailModal(data.contact);
+    showToast('New draft generated.', 'success');
+    loadContacts();
+  } else {
+    showToast(formatDetail(data.detail) || 'Drafting failed.', 'error');
+  }
+}
+
+async function sendEmailNow() {
+  if (!editingContactId) return;
+  const contact = allContacts.find(c => c.id === editingContactId) || {};
+  if (!outreachSettings.dry_run && !confirm(`Send this email to ${contact.email} now?`)) return;
+
+  if (!(await saveEmailDraft(true))) return;
+  const sendBtn = document.getElementById('btn-email-send');
+  sendBtn.disabled = true;
+  try {
+    const res = await fetch(`/api/contacts/${editingContactId}/send`, { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      showToast(data.message, 'success');
+      closeEmailModal();
+    } else {
+      showToast(formatDetail(data.detail) || 'Sending failed.', 'error');
+      sendBtn.disabled = false;
+    }
+  } catch (err) {
+    showToast(`Error: ${err}`, 'error');
+    sendBtn.disabled = false;
+  }
+  loadContacts();
+}
+
+async function setContactStatus(status) {
+  if (!editingContactId) return;
+  const res = await fetch(`/api/contacts/${editingContactId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+  const data = await res.json();
+  if (res.ok) {
+    showToast(`Status set to ${contactStatuses[status] || status}.`, 'success');
+    fillEmailModal(data.contact);
+    loadContacts();
+  } else {
+    showToast(formatDetail(data.detail) || 'Failed to update status.', 'error');
+  }
+}
+
+function confirmLiveAutoSend(action) {
+  if (outreachSettings.dry_run) return true;
+  const ready = allContacts.filter(c => ['new', 'drafted', 'previewed'].includes(c.status)).length;
+  return confirm(`${action} will email up to ${Math.min(ready, outreachSettings.daily_limit || ready)} contact(s) from ${outreachSettings.smtp_user} without review, plus any follow-ups that are due. Continue?`);
+}
+
+async function runOutreach() {
+  const autoSend = document.getElementById('chk-outreach-auto-send').checked;
+  if (autoSend && !confirmLiveAutoSend('This cycle')) return;
+  try {
+    const res = await fetch('/api/outreach/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ auto_send: autoSend })
+    });
+    const data = await res.json();
+    showToast(data.message || 'Outreach started.', res.ok ? 'success' : 'error');
+    fetchStatus();
+  } catch (err) {
+    showToast(`Error: ${err}`, 'error');
+  }
+}
+
+async function toggleOutreachDaemon() {
+  if (currentOutreachStatus === 'daemon') {
+    await stopOutreach();
+    return;
+  }
+  const autoSend = document.getElementById('chk-outreach-auto-send').checked;
+  if (autoSend && !confirmLiveAutoSend('The daemon')) return;
+  const interval = parseInt(document.getElementById('input-outreach-interval').value || '60', 10);
+  try {
+    const res = await fetch('/api/outreach/daemon/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interval_minutes: interval, auto_send: autoSend })
+    });
+    const data = await res.json();
+    showToast(data.message || 'Outreach daemon started.', res.ok ? 'success' : 'error');
+    fetchStatus();
+  } catch (err) {
+    showToast(`Error: ${err}`, 'error');
+  }
+}
+
+async function stopOutreach() {
+  try {
+    const res = await fetch('/api/outreach/stop', { method: 'POST' });
+    const data = await res.json();
+    showToast(data.message || 'Outreach stopped.', 'success');
+    fetchStatus();
+  } catch (err) {
+    showToast(`Failed to stop outreach: ${err}`, 'error');
+  }
+}
+
+function updateOutreachControls(outreach) {
+  const status = outreach.status || 'idle';
+  const wasBusy = currentOutreachStatus !== 'idle';
+  currentOutreachStatus = status;
+
+  document.getElementById('btn-outreach-run').disabled = status !== 'idle';
+  document.getElementById('btn-outreach-daemon').disabled = status === 'running';
+  document.getElementById('outreach-daemon-label').textContent =
+    status === 'daemon' ? 'Stop Auto-Outreach Daemon' : 'Start Auto-Outreach Daemon';
+  document.getElementById('btn-outreach-stop').style.display = status === 'running' ? 'inline-flex' : 'none';
+  document.getElementById('outreach-step').textContent = outreach.current_step || 'Outreach Ready';
+  if (outreach.stats) document.getElementById('tab-outreach-count').textContent = outreach.stats.total || 0;
+
+  // Keep the contact table live while a cycle runs, and refresh once when it finishes
+  const outreachTabOpen = document.getElementById('tab-outreach').classList.contains('active');
+  if (outreachTabOpen && (status !== 'idle' || wasBusy)) loadContacts();
 }
 
 // ---------------------------------------------------------------------------

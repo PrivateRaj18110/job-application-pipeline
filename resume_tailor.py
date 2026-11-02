@@ -52,50 +52,10 @@ def load_master_resume(resume_path: Optional[str] = None) -> str:
         with open(path, "r", encoding="utf-8") as f:
             return f.read().strip()
 
-    # Fallback to embedded master resume if file is missing
-    return """
-# Alex Rivera
-Senior Quantitative Systems & Machine Learning Engineer
-alex.rivera.dev@example.com | +1-555-0199 | https://www.linkedin.com/in/alexrivera-dev
+    # No master resume yet: render one from the structured CV (cv.json)
+    import portfolio_builder
 
-## Education
-University of California, Berkeley (2024)
-B.S. in Computer Science & Applied Mathematics | GPA: 3.91 / 4.00
-
-## Technical Skills
-- Programming Languages: Modern C++ (C++17/20), Python, SQL (PostgreSQL), Rust
-- High-Performance & Low-Latency: Numba (JIT `@njit`), SIMD Vectorization, Lock-free Ring Buffers, ZeroMQ, Socket Programming
-- Quantitative & Broker APIs: MetaTrader 5 (MT5 Python API), FlatTrade Broker API, WebSocket Market Feeds
-- Numerical & Machine Learning: NumPy, Pandas, SciPy, PyTorch, Scikit-learn
-- Systems: Linux, Docker, CMake, Git
-
-## Projects
-Low-Latency C++ Execution Engine
-Tech Stack: Modern C++ (C++20), Lock-free Queues, Linux Sockets
-- Engineered ultra-low-latency order execution engine in C++ with sub-millisecond execution dispatch.
-- Implemented custom ring-buffer and lock-free SPSC queues to eliminate mutex contention across worker threads.
-
-Numba-Accelerated Quantitative Strategy Engine
-Tech Stack: Python, Numba JIT, NumPy, SciPy
-- Built high-throughput algorithmic signal generation and risk management engine accelerated with Numba `@njit` kernels.
-- Optimized hot execution paths for real-time tick analysis and dynamic position sizing.
-
-Multi-Broker API Gateway (MetaTrader 5 & FlatTrade)
-Tech Stack: Python, MetaTrader 5 API, FlatTrade API, WebSockets
-- Developed unified multi-broker trading gateway connecting to MetaTrader 5 and FlatTrade APIs.
-- Automated continuous order dispatch, live P&L tracking, and real-time margin calculation.
-
-## Experience & Internships
-AlphaPulse Quantitative Capital | Quantitative Systems Engineer (2024 - Present)
-- Architected ultra-low-latency C++20 order routing engine with sub-50 microsecond execution dispatch.
-- Implemented lock-free circular memory buffers to eliminate thread contention.
-
-Vertex AI Research Labs | Machine Learning Engineering Intern (2023 - 2024)
-- Developed deep learning models for real-time anomaly detection using PyTorch and CUDA.
-
-## Certifications & Achievements
-Certified Kubernetes Application Developer (CKAD) | AWS Certified Solutions Architect
-"""
+    return portfolio_builder.cv_to_markdown(portfolio_builder.load_cv())
 
 
 def _generate_tailored_resume_gemini(job_description: str, master_resume_text: str) -> str:
@@ -151,113 +111,50 @@ def _generate_tailored_resume_openai(job_description: str, master_resume_text: s
     return response.choices[0].message.content.strip()
 
 
+def generate_text(system_prompt: str, user_prompt: str, temperature: float = 0.4) -> str:
+    """
+    Provider-agnostic LLM call shared with other modules (e.g. cold_emailer.py).
+    Returns an empty string when no provider is configured or the call fails, so callers can fall back.
+    """
+    provider = os.getenv("LLM_PROVIDER", "gemini").lower()
+    try:
+        gemini_key = os.getenv("GEMINI_API_KEY", "")
+        openai_key = os.getenv("OPENAI_API_KEY", "")
+        if provider == "gemini" and gemini_key and not gemini_key.startswith("your_"):
+            from google import genai
+
+            client = genai.Client(api_key=gemini_key)
+            response = client.models.generate_content(
+                model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+                contents=f"{system_prompt}\n\n{user_prompt}",
+            )
+            return (response.text or "").strip()
+
+        if provider == "openai" and openai_key and not openai_key.startswith("your_"):
+            from openai import OpenAI
+
+            client = OpenAI(api_key=openai_key)
+            response = client.chat.completions.create(
+                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=temperature,
+            )
+            return (response.choices[0].message.content or "").strip()
+    except Exception as e:
+        logger.warning("[LLM] %s generation failed: %s", provider, e)
+    return ""
+
+
 def _fallback_heuristic_tailoring(job_description: str, master_resume_text: str) -> str:
     """
-    Intelligent heuristic fallback if no LLM API key is configured.
-    Ensures that test runs and dry runs succeed smoothly without external keys.
+    Fallback when no LLM API key is configured: returns the master resume unchanged,
+    so test runs and dry runs still produce a truthful PDF without external keys.
     """
-    logger.info("Using smart heuristic tailoring (No LLM API key configured).")
-    jd_lower = job_description.lower()
-    is_trading_focused = any(kw in jd_lower for kw in ["trading", "quant", "algorithmic", "latency", "numba", "broker", "metatrader", "flattrade", "execution engine", "c++"])
-    is_ml_focused = any(kw in jd_lower for kw in ["machine learning", "ml", "ai", "vision", "pytorch", "deep learning"])
-    is_mobile_focused = any(kw in jd_lower for kw in ["flutter", "mobile", "android", "dart", "frontend"])
-
-    if is_trading_focused:
-        highlight_note = "Tailored for Low-Latency Algorithmic Trading & Quantitative Systems"
-    elif is_ml_focused:
-        highlight_note = "Tailored for AI & Machine Learning Opportunities"
-    else:
-        highlight_note = "Tailored for Full-Stack & Mobile Engineering"
-
-    tailored = f"""# Alex Rivera
-**Quantitative Systems & Software Engineer | {highlight_note}**
-alex.rivera.dev@example.com | +1-555-0199 | [LinkedIn](https://www.linkedin.com/in/alexrivera-dev) | [GitHub](https://github.com/alexrivera-dev)
-
----
-
-## Technical Skills
-- **Low-Latency & Performance**: Modern C++ (C++17/20), Numba (JIT `@njit`), SIMD, Lock-free Queues, Multithreading, ZeroMQ
-- **Trading & Broker APIs**: MetaTrader 5 (MT5 Python API), FlatTrade Broker API, WebSocket tick streams, Order Management Systems
-- **Programming Languages**: Python, Modern C++, SQL (PostgreSQL, SQLite)
-- **Scientific & Numerical Computing**: NumPy, Pandas, SciPy, Scikit-learn
-- **Systems & Tooling**: Linux/Unix, Git, CMake, GCC/Clang, Docker, Visual Studio
-
----
-
-## Key Projects
-"""
-
-    if is_trading_focused:
-        tailored += """### Low-Latency C++ Execution Engine
-*Tech Stack: Modern C++ (C++20), Multithreading, Lock-free Queues, Socket Programming, Linux*
-- Engineered an ultra-low-latency order execution engine in C++ with sub-millisecond execution dispatch.
-- Implemented custom ring-buffer and lock-free SPSC queues to eliminate mutex contention across worker threads.
-- Integrated asynchronous market data feeds and order routing protocols with deterministic latency profiles.
-
-### Numba-Accelerated Quantitative Strategy Engine
-*Tech Stack: Python, Numba JIT, NumPy, Pandas, SciPy*
-- Built high-throughput algorithmic signal generation and risk management engine accelerated with Numba `@njit` kernels.
-- Optimized execution hot paths, achieving near-C execution performance for real-time tick analysis and dynamic position sizing.
-- Implemented backtesting and forward-simulation modules capable of crunching multi-gigabyte order book snapshots.
-
-### Multi-Broker API Gateway (MetaTrader 5 & FlatTrade)
-*Tech Stack: Python, MetaTrader 5 API, FlatTrade API, WebSockets, Asyncio, PostgreSQL*
-- Developed unified multi-broker trading gateway connecting to MetaTrader 5 (MT5) and FlatTrade APIs.
-- Automated continuous order dispatch, live P&L tracking, trailing stop algorithms, and real-time margin calculation.
-- Architected resilient WebSocket reconnection listeners and failover mechanisms for uninterrupted trading connectivity.
-"""
-    elif is_ml_focused:
-        tailored += """### TruthLens: Deepfake Video Detection
-*Tech Stack: Python, PyTorch, OpenCV, Google Colab*
-- Developed a deep learning system that classifies videos as real or deepfake by analyzing facial and temporal features.
-- Implemented a ResNeXt CNN for frame-level feature extraction and an LSTM to model patterns across sequential frames.
-- Preprocessed video datasets, trained and evaluated neural network models, generating predictions with confidence scores.
-
-### Low-Latency C++ Execution Engine
-*Tech Stack: Modern C++ (C++20), Lock-free Queues, Multithreading*
-- Engineered high-throughput execution hot-paths and real-time data streaming pipelines.
-"""
-    else:
-        tailored += """### Multi-Broker API Gateway (MetaTrader 5 & FlatTrade)
-*Tech Stack: Python, MetaTrader 5 API, FlatTrade API, WebSockets*
-- Built scalable automated trading gateway with real-time order processing and WebSocket feeds.
-
-### Low-Latency C++ Execution Engine
-*Tech Stack: Modern C++, Lock-free Queues, Linux*
-- Developed high-performance order routing engine in Modern C++ with sub-millisecond latency.
-"""
-
-    tailored += """
----
-
-## Experience & Internships
-- **India Space Week | Trainee** *(Feb 2026 – Mar 2026)*
-  - Completed rigorous training in drone technology covering UAV avionics, flight dynamics, and embedded systems.
-  - Gained hands-on experience in structural simulation, flight controller integration, and GIS drone mapping.
-- **Univent | Web Designing Intern** *(Jun 2023 – Jul 2023)*
-  - Designed interactive user interfaces to client specifications using modern design standards.
-- **Ekraft | Digital Marketing Intern** *(Jul 2022 – Aug 2022)*
-  - Produced engaging technical content and visual assets to strengthen digital audience reach.
-
----
-
-## Education
-- **SNDT Women's University, Usha Mittal Institute of Technology** (2026)
-  *B.Tech in Information Technology* | **CGPA: 8.28**
-- **Shri Bhagubhai Mafatlal Polytechnic** (2023)
-  *Diploma in Information Technology* | **CGPA: 8.79**
-- **Bombay Cambridge International School** (2020)
-  *SSC* | **87.00%**
-
----
-
-## Certifications & Leadership
-- Data Structures and Algorithms (Udemy) • Cloud Computing Fundamentals (IBM) • IT Fundamentals (IBM)
-- Professional & Communication Skills (IBM)
-- Senior Council Member, E-Cell Council
-- Authored Research Papers on Smart City IoT Services and E-Commerce Architecture.
-"""
-    return tailored.strip()
+    logger.info("No LLM API key configured; using the master resume without tailoring.")
+    return master_resume_text.strip()
 
 
 def tailor_resume(job_description: str, master_resume_text: Optional[str] = None) -> str:
@@ -303,7 +200,9 @@ def convert_markdown_to_pdf(markdown_content: str, job_title: str = "Tailored", 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     if not output_filename:
-        output_filename = f"Resume_Alex_Rivera_{sanitized_title}_{timestamp}.pdf"
+        name_match = re.search(r"^#\s+(.+)$", markdown_content, re.M)
+        candidate = re.sub(r"[^\w\-]", "_", name_match.group(1).strip()) if name_match else "Candidate"
+        output_filename = f"Resume_{candidate}_{sanitized_title}_{timestamp}.pdf"
 
     output_path = OUTPUT_DIR / output_filename
 

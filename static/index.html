@@ -27,10 +27,10 @@
 
       <div class="header-right">
         <div class="candidate-badge">
-          <div class="candidate-avatar">AR</div>
+          <div class="candidate-avatar" id="candidate-avatar">··</div>
           <div>
-            <div style="font-weight: 700; color: #fff;">Alex Rivera</div>
-            <div style="font-size: 0.7rem; color: var(--text-muted);">Quant & ML Systems Engineer</div>
+            <div style="font-weight: 700; color: #fff;" id="candidate-name">Loading profile...</div>
+            <div style="font-size: 0.7rem; color: var(--text-muted);" id="candidate-role"></div>
           </div>
         </div>
 
@@ -39,6 +39,7 @@
           <span id="env-sheet" class="env-tag" title="Google Sheet State Check">● Google Sheet</span>
           <span id="env-playwright" class="env-tag active" title="Playwright Chromium Installed">● Chromium</span>
           <span id="env-auto-submit" class="env-tag" title="Auto-Submit Mode">● Auto-Submit</span>
+          <span id="env-email" class="env-tag" title="SMTP Email Sending">● Email</span>
         </div>
       </div>
     </div>
@@ -154,6 +155,15 @@
       <button class="tab-btn" onclick="switchTab('resume')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         Master Resume (Source of Truth)
+      </button>
+      <button class="tab-btn" onclick="switchTab('portfolio')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        Portfolio Website
+      </button>
+      <button class="tab-btn" onclick="switchTab('outreach')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        Cold Outreach
+        <span class="tab-badge" id="tab-outreach-count">0</span>
       </button>
     </nav>
 
@@ -351,6 +361,177 @@
       </div>
     </div>
 
+    <!-- =========================================================
+         TAB 6: PORTFOLIO & CV WEBSITE
+    ========================================================== -->
+    <div id="tab-portfolio" class="tab-content">
+      <div class="control-grid">
+        <div class="control-panel">
+          <div class="card">
+            <div class="card-title">PORTFOLIO WEBSITE</div>
+            <p class="hint-text">
+              Your public visual CV is generated from <code>cv.json</code>: profile, skills (level 1–5), projects, experience and education.
+              Saving rebuilds the site and the CV PDF that cold emails attach.
+            </p>
+            <div class="kv-row"><span>Last built</span><strong id="portfolio-built-at">Never</strong></div>
+            <div class="action-buttons-group" style="margin-top: 1rem;">
+              <button class="btn btn-primary" onclick="saveCv()">Save CV & Rebuild Site</button>
+              <a class="btn btn-cyan" href="/portfolio/" target="_blank" rel="noopener">Open Portfolio ↗</a>
+              <a class="btn btn-outline" id="portfolio-pdf-link" href="/portfolio/resume.pdf" target="_blank" rel="noopener">View CV PDF ↗</a>
+              <button class="btn btn-outline" onclick="syncMasterResume()">Copy CV into Master Resume</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">PUBLISH ONLINE (FREE)</div>
+            <ol class="hint-list">
+              <li>Commit and push the <code>portfolio/</code> folder to GitHub.</li>
+              <li>In the repo: <strong>Settings → Pages → Source: GitHub Actions</strong>. The included workflow deploys on every push.</li>
+              <li>Put the live URL in <code>profile.links.portfolio</code> so every cold email links to it.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>STRUCTURED CV (<code>cv.json</code>)</span>
+            <div class="seg-group">
+              <button class="seg-btn active" id="seg-cv-editor" onclick="setCvView('editor')">Editor</button>
+              <button class="seg-btn" id="seg-cv-preview" onclick="setCvView('preview')">Live Preview</button>
+            </div>
+          </div>
+          <textarea id="textarea-cv-json" class="form-input" spellcheck="false" style="width: 100%; height: 560px; font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.4;"></textarea>
+          <iframe id="portfolio-preview" title="Portfolio preview" src="about:blank" style="display: none;"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         TAB 7: COLD OUTREACH
+    ========================================================== -->
+    <div id="tab-outreach" class="tab-content">
+      <section class="metrics-grid">
+        <div class="metric-card accent-blue">
+          <span class="metric-label">Contacts</span>
+          <span class="metric-value" id="metric-contacts">0</span>
+          <span class="metric-sub" id="metric-contacts-sub">Recruiters & hiring managers</span>
+        </div>
+        <div class="metric-card accent-cyan">
+          <span class="metric-label">Drafts Ready</span>
+          <span class="metric-value" id="metric-drafts">0</span>
+          <span class="metric-sub">Waiting to be sent</span>
+        </div>
+        <div class="metric-card accent-green">
+          <span class="metric-label">Emails Sent</span>
+          <span class="metric-value" id="metric-sent">0</span>
+          <span class="metric-sub" id="metric-sent-today">0 today</span>
+        </div>
+        <div class="metric-card accent-amber">
+          <span class="metric-label">Replies</span>
+          <span class="metric-value" id="metric-replies">0</span>
+          <span class="metric-sub" id="metric-reply-rate">Reply rate: n/a</span>
+        </div>
+      </section>
+
+      <div class="control-grid">
+        <div class="control-panel">
+          <div class="card">
+            <div class="card-title">OUTREACH AUTOMATION</div>
+            <div class="mode-banner" id="outreach-mode-banner">Loading email settings...</div>
+
+            <div class="action-buttons-group">
+              <button class="btn btn-primary" id="btn-outreach-run" onclick="runOutreach()">Run Outreach Cycle Now</button>
+              <button class="btn btn-outline" id="btn-outreach-daemon" onclick="toggleOutreachDaemon()">
+                <span id="outreach-daemon-label">Start Auto-Outreach Daemon</span>
+              </button>
+              <button class="btn btn-danger" id="btn-outreach-stop" onclick="stopOutreach()" style="display: none;">Stop Outreach</button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.9rem;">
+              <label class="form-checkbox-label">
+                <input type="checkbox" id="chk-outreach-auto-send">
+                <span><strong>Auto-send</strong> (send drafts and follow-ups without review)</span>
+              </label>
+            </div>
+            <div class="form-group" style="margin-top: 0.75rem;">
+              <label class="form-label">Daemon Interval (Minutes)</label>
+              <input type="number" id="input-outreach-interval" class="form-input" value="60" min="5" max="1440">
+            </div>
+            <div class="hint-text" id="outreach-step">Outreach Ready</div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">ADD CONTACT</div>
+            <div class="form-group">
+              <label class="form-label">NAME</label>
+              <input type="text" id="contact-name" class="form-input" placeholder="Priya Shah">
+            </div>
+            <div class="form-group">
+              <label class="form-label">EMAIL *</label>
+              <input type="email" id="contact-email" class="form-input" placeholder="priya@company.com">
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">COMPANY</label>
+                <input type="text" id="contact-company" class="form-input" placeholder="Acme">
+              </div>
+              <div class="form-group">
+                <label class="form-label">ROLE THEY HIRE FOR</label>
+                <input type="text" id="contact-role" class="form-input" placeholder="Backend Engineer">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">LINK TO A TRACKED JOB (OPTIONAL)</label>
+              <select id="contact-job" class="form-input">
+                <option value="">None</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">NOTES FOR THE EMAIL</label>
+              <textarea id="contact-notes" class="form-input" rows="2" placeholder="Met at a meetup, team works on C++ trading infra..."></textarea>
+            </div>
+            <button class="btn btn-primary" style="width: 100%;" onclick="addContact()">Add Contact</button>
+          </div>
+
+          <div class="card">
+            <div class="card-title">IMPORT CONTACTS (CSV)</div>
+            <p class="hint-text">Columns: <code>name, email, company, role, job_url, notes</code>. Only <code>email</code> is required.</p>
+            <input type="file" id="input-csv-file" accept=".csv,text/csv" class="form-input" style="width: 100%; margin: 0.6rem 0;" onchange="loadCsvFile(this)">
+            <textarea id="textarea-csv" class="form-input" rows="4" style="width: 100%; font-family: var(--font-mono); font-size: 0.78rem;" placeholder="name,email,company,role&#10;Priya Shah,priya@acme.com,Acme,Backend Engineer"></textarea>
+            <button class="btn btn-outline" style="width: 100%; margin-top: 0.6rem;" onclick="importCsv()">Import CSV</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>CONTACTS & EMAIL PIPELINE</span>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" class="form-input" placeholder="Search contacts..." oninput="searchContacts(this.value)">
+              <button class="btn btn-outline" onclick="loadContacts()">Refresh</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="jobs-table">
+              <thead>
+                <tr>
+                  <th>Contact</th>
+                  <th>Company & Role</th>
+                  <th style="width: 150px;">Status</th>
+                  <th style="width: 150px;">Last Activity</th>
+                  <th style="width: 210px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="contacts-table-body">
+                <tr>
+                  <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading contacts...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- PDF Preview Modal -->
@@ -375,6 +556,37 @@
       </div>
       <div class="modal-content-area">
         <img id="screenshot-img" src="" alt="Submission Screenshot">
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Draft Modal -->
+  <div class="modal-overlay" id="email-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title" id="email-modal-title">Email Draft</div>
+        <button class="modal-close-btn" onclick="closeEmailModal()">&times;</button>
+      </div>
+      <div class="modal-content-area">
+        <div class="kv-row" style="margin-bottom: 0.85rem;"><span>To</span><strong id="email-modal-to"></strong></div>
+        <div class="form-group">
+          <label class="form-label">SUBJECT</label>
+          <input type="text" id="email-subject" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">BODY</label>
+          <textarea id="email-body" class="form-input" rows="12" style="font-size: 0.88rem; line-height: 1.5;"></textarea>
+        </div>
+        <p class="hint-text" id="email-modal-footer-note"></p>
+        <div class="email-history" id="email-history"></div>
+        <div class="modal-actions">
+          <select id="email-status" class="form-input" onchange="setContactStatus(this.value)" title="Change status"></select>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-outline" id="btn-email-regenerate" onclick="regenerateDraft()">Regenerate with AI</button>
+            <button class="btn btn-outline" id="btn-email-save" onclick="saveEmailDraft()">Save Draft</button>
+            <button class="btn btn-primary" id="btn-email-send" onclick="sendEmailNow()">Send Now</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

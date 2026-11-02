@@ -12,3 +12,8 @@ output/*.pdf
 output/*.md
 logs/
 
+
+# Cold outreach contacts & email previews (personal data)
+contacts.json
+contacts.json.tmp
+output/emails/

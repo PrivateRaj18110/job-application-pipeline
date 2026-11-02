@@ -10,6 +10,7 @@ Run with:
 
 import os
 import sys
+import csv
 import json
 import time
 import asyncio
@@ -54,6 +55,8 @@ import scraper
 import resume_tailor
 import apply_bot
 import main as pipeline_main
+import portfolio_builder
+import cold_emailer
 
 # ---------------------------------------------------------------------------
 # In-Memory Real-Time Log Buffer & Broadcaster
@@ -117,6 +120,17 @@ active_task: Optional[asyncio.Task] = None
 daemon_task: Optional[asyncio.Task] = None
 daemon_stop_event = asyncio.Event()
 
+outreach_state = {
+    "status": "idle",  # "idle" | "running" | "daemon"
+    "current_step": "Outreach Ready",
+    "last_run_time": None,
+    "last_run_result": None,
+    "last_error": None,
+}
+
+outreach_task: Optional[asyncio.Task] = None
+outreach_stop_event = asyncio.Event()
+
 
 # ---------------------------------------------------------------------------
 # FastAPI Application Setup
@@ -139,6 +153,8 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 app.mount("/output", StaticFiles(directory=str(OUTPUT_DIR)), name="output")
 app.mount("/logs/screenshots", StaticFiles(directory=str(SCREENSHOTS_DIR)), name="screenshots")
+portfolio_builder.PORTFOLIO_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/portfolio", StaticFiles(directory=str(portfolio_builder.PORTFOLIO_DIR), html=True), name="portfolio")
 
 
 # ---------------------------------------------------------------------------
@@ -163,6 +179,43 @@ class DaemonRequest(BaseModel):
 
 class ResumeUpdateRequest(BaseModel):
     content: str
+
+
+class CvUpdateRequest(BaseModel):
+    cv: Dict[str, Any]
+
+
+class ContactRequest(BaseModel):
+    name: str = ""
+    email: str
+    company: str = ""
+    role: str = ""
+    job_url: str = ""
+    notes: str = ""
+
+
+class ContactUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    company: Optional[str] = None
+    role: Optional[str] = None
+    job_url: Optional[str] = None
+    notes: Optional[str] = None
+    subject: Optional[str] = None
+    body: Optional[str] = None
+    status: Optional[str] = None
+
+
+class CsvImportRequest(BaseModel):
+    csv_text: str
+
+
+class OutreachRunRequest(BaseModel):
+    auto_send: bool = False
+
+
+class OutreachDaemonRequest(BaseModel):
+    interval_minutes: int = 60
+    auto_send: bool = True
 
 
 # ---------------------------------------------------------------------------
@@ -275,6 +328,53 @@ async def _execute_daemon_worker(req: DaemonRequest):
         logger.info("<<< Background Scheduler Daemon stopped.")
 
 
+def _set_outreach_step(text: str):
+    outreach_state["current_step"] = text
+
+
+async def _execute_outreach_worker(auto_send: bool):
+    """Runs a single cold outreach cycle (draft, then send if auto_send)."""
+    global outreach_task
+    outreach_state.update(status="running", last_error=None,
+                          last_run_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    try:
+        summary = await cold_emailer.run_outreach_cycle(
+            auto_send=auto_send, stop_event=outreach_stop_event, on_step=_set_outreach_step
+        )
+        outreach_state["last_run_result"] = summary
+        outreach_state["current_step"] = "Outreach Cycle Finished (Idle)"
+    except asyncio.CancelledError:
+        outreach_state["current_step"] = "Outreach Cancelled"
+        outreach_state["last_error"] = "Cancelled by user"
+    except Exception as e:
+        logger.error("[EMAIL] Outreach cycle failed: %s", e, exc_info=True)
+        outreach_state["current_step"] = f"Failed: {str(e)[:80]}"
+        outreach_state["last_error"] = str(e)
+    finally:
+        outreach_state["status"] = "idle"
+        outreach_task = None
+
+
+async def _execute_outreach_daemon_worker(req: OutreachDaemonRequest):
+    """Runs outreach cycles on an interval until stopped."""
+    global outreach_task
+    outreach_state.update(status="daemon", current_step=f"Outreach Daemon Active (Interval: {req.interval_minutes}m)",
+                          last_run_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    logger.info(">>> Outreach daemon started (interval %d min, auto-send %s)", req.interval_minutes, req.auto_send)
+    try:
+        await cold_emailer.run_daemon(
+            interval_minutes=req.interval_minutes, auto_send=req.auto_send,
+            stop_event=outreach_stop_event, on_step=_set_outreach_step,
+        )
+    except asyncio.CancelledError:
+        pass
+    finally:
+        outreach_state["status"] = "idle"
+        outreach_state["current_step"] = "Outreach Daemon Stopped"
+        outreach_task = None
+        logger.info("<<< Outreach daemon stopped.")
+
+
 # ---------------------------------------------------------------------------
 # API Endpoints
 # ---------------------------------------------------------------------------
@@ -328,7 +428,18 @@ async def get_system_status():
         "google_sheet_configured": os.getenv("GOOGLE_SHEET_ID", "") not in ("", "your_google_sheet_id_here"),
         "service_account_exists": (BASE_DIR / os.getenv("GOOGLE_SERVICE_ACCOUNT_FILE", "credentials.json")).exists(),
         "auto_submit_enabled": os.getenv("AUTO_SUBMIT", "true").lower() in ("true", "1", "yes"),
+        "smtp_configured": cold_emailer.smtp_configured(),
     }
+
+    try:
+        profile = portfolio_builder.load_cv().get("profile", {})
+    except Exception:
+        profile = {}
+
+    try:
+        outreach_stats = cold_emailer.get_stats()
+    except ValueError:
+        outreach_stats = {}
 
     # Count screenshots & PDFs
     screenshot_count = len(list(SCREENSHOTS_DIR.glob("*.png")))
@@ -344,11 +455,12 @@ async def get_system_status():
             "uptime_seconds": int(time.time() - SERVER_START_TIME),
         },
         "candidate": {
-            "name": apply_bot.DEFAULT_APPLICANT.get("full_name", "Alex Rivera"),
-            "role": "Senior Quantitative Systems & Machine Learning Engineer",
-            "email": apply_bot.DEFAULT_APPLICANT.get("email", "alex.rivera.dev@example.com"),
-            "location": apply_bot.DEFAULT_APPLICANT.get("location", "San Francisco, CA"),
+            "name": profile.get("name") or apply_bot.DEFAULT_APPLICANT.get("full_name", "Alex Rivera"),
+            "role": profile.get("title") or "Senior Quantitative Systems & Machine Learning Engineer",
+            "email": profile.get("email") or apply_bot.DEFAULT_APPLICANT.get("email", "alex.rivera.dev@example.com"),
+            "location": profile.get("location") or apply_bot.DEFAULT_APPLICANT.get("location", "San Francisco, CA"),
         },
+        "outreach": dict(outreach_state, stats=outreach_stats),
         "stats": stats,
         "counts": {
             "targets_total": len(targets_list),
@@ -570,6 +682,174 @@ async def get_screenshots_gallery():
             "timestamp": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
         })
     return {"screenshots": screenshots}
+
+
+# ---------------------------------------------------------------------------
+# Portfolio & Structured CV Endpoints
+# ---------------------------------------------------------------------------
+@app.get("/api/cv")
+async def get_cv():
+    """Returns cv.json plus the portfolio build state."""
+    try:
+        cv = portfolio_builder.load_cv()
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="cv.json not found.")
+    built_at = None
+    if portfolio_builder.PORTFOLIO_CV_FILE.exists():
+        try:
+            with open(portfolio_builder.PORTFOLIO_CV_FILE, "r", encoding="utf-8") as f:
+                built_at = json.load(f).get("generated_at")
+        except Exception:
+            pass
+    return {
+        "cv": cv,
+        "built_at": built_at,
+        "pdf_url": "/portfolio/resume.pdf" if portfolio_builder.PORTFOLIO_PDF_FILE.exists() else None,
+    }
+
+
+@app.post("/api/cv")
+async def save_cv(req: CvUpdateRequest):
+    """Validates and saves cv.json, then rebuilds the portfolio site and CV PDF."""
+    try:
+        portfolio_builder.save_cv(req.cv)
+        result = await asyncio.to_thread(portfolio_builder.build_portfolio, req.cv)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "success", "message": "CV saved and portfolio rebuilt.", **result}
+
+
+@app.post("/api/portfolio/build")
+async def build_portfolio_site():
+    """Rebuilds the portfolio site and CV PDF from the saved cv.json."""
+    try:
+        result = await asyncio.to_thread(portfolio_builder.build_portfolio)
+    except (ValueError, FileNotFoundError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "success", "message": "Portfolio rebuilt.", **result}
+
+
+@app.post("/api/cv/sync-master")
+async def sync_master_resume_from_cv():
+    """Regenerates master_resume.md (the tailoring ground truth) from cv.json."""
+    try:
+        path = await asyncio.to_thread(portfolio_builder.sync_master_resume)
+    except (ValueError, FileNotFoundError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "success", "message": "master_resume.md regenerated from cv.json.", "path": path}
+
+
+# ---------------------------------------------------------------------------
+# Cold Outreach Endpoints
+# ---------------------------------------------------------------------------
+def _contact_or_404(contact_id: str) -> Dict[str, Any]:
+    try:
+        return cold_emailer.get_contact(contact_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Contact not found.")
+
+
+@app.get("/api/contacts")
+async def list_contacts():
+    """Returns all outreach contacts (newest first) with stats and the current email settings."""
+    try:
+        contacts = cold_emailer.load_contacts()
+    except ValueError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return {
+        "contacts": list(reversed(contacts)),
+        "stats": cold_emailer.get_stats(contacts),
+        "statuses": cold_emailer.STATUSES,
+        "settings": cold_emailer.public_settings(),
+        "opt_out_line": cold_emailer.OPT_OUT_LINE,
+    }
+
+
+@app.post("/api/contacts")
+async def create_contact(req: ContactRequest):
+    try:
+        contact = cold_emailer.add_contact(req.model_dump())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "success", "contact": contact}
+
+
+@app.post("/api/contacts/import")
+async def import_contacts(req: CsvImportRequest):
+    try:
+        result = cold_emailer.import_contacts_csv(req.csv_text)
+    except (ValueError, csv.Error) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "success", **result}
+
+
+@app.put("/api/contacts/{contact_id}")
+async def edit_contact(contact_id: str, req: ContactUpdateRequest):
+    _contact_or_404(contact_id)
+    try:
+        contact = cold_emailer.update_contact(contact_id, req.model_dump(exclude_none=True))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "success", "contact": contact}
+
+
+@app.delete("/api/contacts/{contact_id}")
+async def remove_contact(contact_id: str):
+    _contact_or_404(contact_id)
+    cold_emailer.delete_contact(contact_id)
+    return {"status": "success", "message": "Contact deleted."}
+
+
+@app.post("/api/contacts/{contact_id}/draft")
+async def draft_contact_email(contact_id: str):
+    """Generates (or regenerates) the first email for one contact."""
+    _contact_or_404(contact_id)
+    try:
+        contact = await asyncio.to_thread(cold_emailer.draft_contact, contact_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"status": "success", "contact": contact}
+
+
+@app.post("/api/contacts/{contact_id}/send")
+async def send_contact_now(contact_id: str):
+    """Sends the current draft to one contact now (writes a preview instead when in dry-run mode)."""
+    _contact_or_404(contact_id)
+    result = await asyncio.to_thread(cold_emailer.send_contact_email, contact_id, "initial")
+    if result["status"] in ("failed", "skipped"):
+        return JSONResponse(status_code=400, content={"status": result["status"], "detail": result["detail"]})
+    return {"status": result["status"], "message": result["detail"], "contact": result["contact"]}
+
+
+@app.post("/api/outreach/run")
+async def trigger_outreach_run(req: OutreachRunRequest):
+    """Runs one outreach cycle in the background."""
+    global outreach_task
+    if outreach_state["status"] != "idle":
+        return JSONResponse(status_code=409, content={"status": "conflict", "message": f"Outreach is currently {outreach_state['status']}."})
+    outreach_stop_event.clear()
+    outreach_task = asyncio.create_task(_execute_outreach_worker(req.auto_send))
+    return {"status": "started", "message": f"Outreach cycle started (auto-send {'on' if req.auto_send else 'off'})."}
+
+
+@app.post("/api/outreach/daemon/start")
+async def start_outreach_daemon(req: OutreachDaemonRequest):
+    global outreach_task
+    if outreach_state["status"] != "idle":
+        return JSONResponse(status_code=409, content={"status": "conflict", "message": f"Outreach is currently {outreach_state['status']}."})
+    outreach_stop_event.clear()
+    outreach_task = asyncio.create_task(_execute_outreach_daemon_worker(req))
+    return {"status": "started", "message": f"Outreach daemon started (every {req.interval_minutes}m)."}
+
+
+@app.post("/api/outreach/stop")
+async def stop_outreach():
+    """Stops a running outreach cycle or daemon."""
+    if outreach_task and not outreach_task.done():
+        outreach_stop_event.set()
+        outreach_task.cancel()
+        return {"status": "stopped", "message": "Outreach stopped."}
+    return {"status": "idle", "message": "Outreach was not running."}
 
 
 if __name__ == "__main__":

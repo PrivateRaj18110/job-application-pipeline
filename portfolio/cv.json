@@ -1,0 +1,690 @@
+{
+  "profile": {
+    "name": "Raj Yadav",
+    "title": "Python Backend & Applied AI Engineer",
+    "tagline": "I build Python backends, LLM-powered automation and event-driven systems, with a finance background to match.",
+    "location": "Mumbai, India",
+    "email": "privateraj49@gmail.com",
+    "show_phone": false,
+    "date_of_birth": "08/04/2002",
+    "links": {
+      "portfolio": "",
+      "linkedin": "",
+      "github": "https://github.com/PrivateRaj18110"
+    },
+    "summary": "MBA Tech (Finance) and Computer Engineering graduate from NMIMS Mumbai. I build end-to-end Python systems: FastAPI services, LLM-powered automation, event-driven platforms on Docker and Kubernetes, and rigorous quantitative research pipelines. Internships at Tata Capital and NTPC taught me the business side that the code serves.",
+    "open_to": [
+      "Applied / Generative AI Engineer",
+      "LLM & AI Agent Developer",
+      "Python Backend (FastAPI) Developer",
+      "AI Automation Engineer",
+      "ML / MLOps Engineer",
+      "Data Engineer"
+    ],
+    "availability": "Open to full-time roles"
+  },
+  "target_roles": [
+    "Applied AI Engineer",
+    "Generative AI Engineer",
+    "GenAI Developer",
+    "Junior GenAI Engineer",
+    "LLM Engineer",
+    "Python Backend Developer",
+    "Python Developer",
+    "Backend Software Engineer",
+    "FastAPI Developer",
+    "AI Automation Engineer",
+    "AI Solutions Engineer",
+    "AI Application Developer",
+    "Agentic AI Engineer",
+    "AI Agent Developer",
+    "AI Platform Engineer",
+    "LLM Infrastructure Engineer",
+    "MLOps Engineer",
+    "AI/ML Engineer",
+    "Junior Machine Learning Engineer",
+    "Data Engineer",
+    "Python Data Engineer",
+    "Analytics Engineer",
+    "Software Engineer – AI/ML",
+    "Full Stack AI Developer",
+    "AI Integration Engineer",
+    "RAG Engineer",
+    "NLP Engineer",
+    "Cloud Backend Engineer",
+    "AI Systems Engineer",
+    "AI Product Engineer",
+    "Associate Software Engineer"
+  ],
+  "skills": [
+    {
+      "category": "AI & Automation",
+      "items": [
+        {
+          "name": "LLM APIs"
+        },
+        {
+          "name": "Prompt Engineering"
+        },
+        {
+          "name": "Playwright"
+        },
+        {
+          "name": "Machine Learning"
+        }
+      ]
+    },
+    {
+      "category": "Backend & Data",
+      "items": [
+        {
+          "name": "Python"
+        },
+        {
+          "name": "FastAPI"
+        },
+        {
+          "name": "SQL"
+        },
+        {
+          "name": "PostgreSQL"
+        },
+        {
+          "name": "Redis"
+        },
+        {
+          "name": "pandas"
+        },
+        {
+          "name": "DuckDB"
+        }
+      ]
+    },
+    {
+      "category": "Cloud & DevOps",
+      "items": [
+        {
+          "name": "Docker"
+        },
+        {
+          "name": "Kubernetes"
+        },
+        {
+          "name": "AWS"
+        },
+        {
+          "name": "Google Cloud"
+        },
+        {
+          "name": "GitHub Actions"
+        },
+        {
+          "name": "Git & GitHub"
+        },
+        {
+          "name": "Prometheus & Grafana"
+        },
+        {
+          "name": "Linux"
+        }
+      ]
+    },
+    {
+      "category": "Systems & Frontend",
+      "items": [
+        {
+          "name": "C++20"
+        },
+        {
+          "name": "CMake"
+        },
+        {
+          "name": "React"
+        },
+        {
+          "name": "TypeScript"
+        }
+      ]
+    },
+    {
+      "category": "Finance & Business",
+      "items": [
+        {
+          "name": "Advanced Excel & Pivot Tables"
+        },
+        {
+          "name": "Power BI"
+        },
+        {
+          "name": "ERP (Oracle Fusion, SAP)"
+        },
+        {
+          "name": "Power Apps & Power Automate"
+        },
+        {
+          "name": "Budgeting & Forecasting"
+        },
+        {
+          "name": "Market Research"
+        }
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Algo Matrics Platform",
+      "category": "Backend & Cloud",
+      "featured": true,
+      "summary": "Multi-tenant algorithmic trading platform: strategies, brokers, risk controls, billing, real-time P&L and a full operations stack in one console.",
+      "tech": [
+        "Python",
+        "FastAPI",
+        "PostgreSQL",
+        "Redis",
+        "Docker",
+        "Kubernetes",
+        "AWS",
+        "Google Cloud",
+        "Prometheus & Grafana",
+        "GitHub Actions",
+        "React",
+        "TypeScript",
+        "LLM APIs"
+      ],
+      "highlights": [
+        "SaaS core: plans and billing through Razorpay / Stripe with GST, broker connections (Zerodha, Angel One, Flattrade, paper trading), risk limits and kill switches.",
+        "Strategy SDK with sandboxed uploads, semantic versioning, an approval workflow, and backtesting with bar replay, Monte Carlo and walk-forward.",
+        "Clean Architecture / DDD monorepo with 152 commits, deployable with one Docker Compose command or on Kubernetes."
+      ],
+      "architecture": [
+        {
+          "layer": "API",
+          "detail": "FastAPI control plane (/api/v1) with JWT and rotating refresh tokens, RBAC, TOTP MFA, RFC 9457 errors and OWASP security headers."
+        },
+        {
+          "layer": "Runtimes",
+          "detail": "Independent trading engine, market-data, worker and scheduler processes coordinated over Redis Streams (consumer groups, dead-letter queue, inbox dedupe)."
+        },
+        {
+          "layer": "Data",
+          "detail": "PostgreSQL with async SQLAlchemy and Alembic migrations, Redis, a read-only DuckDB market-intelligence store, and a SHA-256 hash-chained audit log."
+        },
+        {
+          "layer": "Frontend",
+          "detail": "React + TypeScript operations console (Vite, Tailwind 4, TanStack Query) with live P&L, orders and positions over WebSocket."
+        },
+        {
+          "layer": "AI",
+          "detail": "Claude provider abstraction powering an in-app assistant and strategy explanations, plus an AI-CIO market-regime and ranking overlay."
+        },
+        {
+          "layer": "Cloud",
+          "detail": "Multi-cloud: runs across AWS and Google Cloud VMs, with Kubernetes manifests (KEDA / HPA autoscaling), pluggable secrets (env, AWS Secrets Manager, Fernet) and a VPS agent with mTLS for venue-side brokers."
+        },
+        {
+          "layer": "Ops",
+          "detail": "Prometheus, Grafana, Loki and Alertmanager; circuit breakers, deep readiness probes and GitHub Actions CI."
+        }
+      ],
+      "links": {
+        "live": "https://algomatrics.in",
+        "github": "",
+        "demo": ""
+      },
+      "slug": "algo-matrics",
+      "code_note": "Private repository. Code walkthrough available on request.",
+      "overview": [
+        "Algo Matrics is a multi-tenant platform for systematic trading on Indian equity and derivatives markets. A trader connects a broker, builds or uploads a strategy, versions and approves it, backtests it, then deploys it and watches live P&L, orders and positions stream in.",
+        "Risk limits and kill switches are enforced on the server, not in the browser. The public site is live at algomatrics.in, and console access is by invitation."
+      ],
+      "gallery": [
+        {
+          "src": "assets/projects/algo-matrics/console-heatmap.webp",
+          "caption": "Console, F&O heatmap: all 218 NSE F&O stocks grouped by sector, sized by market cap and coloured by % change."
+        },
+        {
+          "src": "assets/projects/algo-matrics/console-market-intelligence.webp",
+          "caption": "Console, Market Intelligence: AI-CIO ranks which F&O stocks are likely to make a major move, and every forecast is graded against the close."
+        },
+        {
+          "src": "assets/projects/algo-matrics/site-home.webp",
+          "caption": "algomatrics.in: the live public site and what the platform covers."
+        },
+        {
+          "src": "assets/projects/algo-matrics/console-sign-in.webp",
+          "caption": "Console sign-in: invite-only access with short-lived session tokens, and paper trading kept separate from live."
+        },
+        {
+          "src": "assets/projects/algo-matrics/site-engineering.webp",
+          "caption": "Engineering principles on the live site: fail closed, audited, least privilege."
+        }
+      ],
+      "decisions": [
+        "Modular monolith (Clean Architecture / DDD) plus independent runtimes that talk over a Redis Streams event bus with consumer groups, a dead-letter queue and inbox deduplication.",
+        "Fail closed: readiness probes return 503 when a dependency degrades, circuit breakers isolate brokers, and kill switches stop trading at the server.",
+        "Tamper-evident audit: operator actions go into an append-only, SHA-256 hash-chained log.",
+        "Least privilege: secrets come from pluggable backends (env, AWS Secrets Manager, Fernet), and a VPS agent with a rotatable mTLS identity runs venue-side brokers without accepting arbitrary commands."
+      ],
+      "results": [
+        "Live public site at algomatrics.in.",
+        "Runs across AWS and Google Cloud VMs, with one-command Docker Compose bring-up and Kubernetes manifests with KEDA / HPA autoscaling.",
+        "152 commits and 95 Python test files, with GitHub Actions CI for backend, integration, frontend, ops and container images."
+      ]
+    },
+    {
+      "name": "Autonomous Job Application Pipeline",
+      "category": "AI & Automation",
+      "featured": true,
+      "summary": "Unattended pipeline that discovers jobs, tailors my resume with an LLM, applies through a browser bot and runs cold email outreach.",
+      "tech": [
+        "Python",
+        "FastAPI",
+        "Playwright",
+        "LLM APIs",
+        "Prompt Engineering",
+        "GitHub Actions"
+      ],
+      "highlights": [
+        "Gemini / OpenAI resume tailoring under a zero-hallucination prompt, compiled to PDF for every role.",
+        "Playwright apply bot with human-like typing, consent handling, CAPTCHA detection and a screenshot audit trail.",
+        "Cold email engine with threaded follow-ups, IMAP reply detection and daily send limits."
+      ],
+      "architecture": [
+        {
+          "layer": "Discovery",
+          "detail": "Async Playwright scraper over Greenhouse and Lever boards configured in targets.json, filtered by role keywords, seniority and location before any posting is opened."
+        },
+        {
+          "layer": "State",
+          "detail": "Google Sheets (gspread) as the tracker with URL deduplication and a local JSON fallback."
+        },
+        {
+          "layer": "LLM",
+          "detail": "Provider-agnostic Gemini / OpenAI layer for resume tailoring and email drafting, with template fallbacks when no key is set."
+        },
+        {
+          "layer": "Apply",
+          "detail": "Playwright bot types like a person, uploads the tailored PDF, handles consent boxes, detects CAPTCHAs and saves a screenshot of every attempt."
+        },
+        {
+          "layer": "Outreach",
+          "detail": "SMTP sending with the CV attached, IMAP reply checks, daily caps and randomized pacing."
+        },
+        {
+          "layer": "Dashboard",
+          "detail": "FastAPI backend with a Server-Sent Events live console, run controls, application tracker and audit gallery."
+        },
+        {
+          "layer": "Portfolio",
+          "detail": "Static CV site generated from cv.json and deployed to GitHub Pages by GitHub Actions."
+        }
+      ],
+      "links": {
+        "github": "https://github.com/PrivateRaj18110/job-application-pipeline",
+        "demo": ""
+      },
+      "slug": "job-pipeline",
+      "diagram": "flow",
+      "overview": [
+        "An unattended job-search system I built for my own search. It scans company job boards for the roles I target, checks a tracker to avoid duplicates, tailors my resume to each job with an LLM under a strict no-invention prompt, submits applications with a browser bot, and runs cold email outreach with follow-ups.",
+        "This portfolio site is generated by the same system from one structured CV file."
+      ],
+      "gallery": [
+        {
+          "src": "assets/projects/job-pipeline/control-center.webp",
+          "caption": "Control center: live pipeline status, run controls and the architecture flow."
+        },
+        {
+          "src": "assets/projects/job-pipeline/portfolio-builder.webp",
+          "caption": "Portfolio builder: edit cv.json and preview this site live."
+        },
+        {
+          "src": "assets/projects/job-pipeline/cold-outreach.webp",
+          "caption": "Cold outreach: contacts, drafts, daily limits and dry-run mode."
+        }
+      ],
+      "decisions": [
+        "Zero-hallucination prompts: the LLM may only use facts from my CV, and without an API key the system falls back to the untouched master resume instead of inventing content.",
+        "Safe by default: applications and emails start in dry-run mode, with daily caps, randomized pacing and inbox reply detection before anything goes out.",
+        "Role and location filters run on the job listing page before any posting is opened, so per-board limits only count relevant roles.",
+        "One structured CV (cv.json) drives the website, the resume PDF, the master resume and the cold emails."
+      ],
+      "results": [
+        "Code is public on GitHub.",
+        "Offline test suite for the outreach rules (no double sends, threaded follow-ups, daily cap) that never touches the network."
+      ]
+    },
+    {
+      "name": "StudyPilot",
+      "slug": "studypilot",
+      "category": "Full-Stack Web",
+      "summary": "Learning website for Class 7 students: short lessons, practice with hints, unit tests and timed practice papers. Live as a prototype.",
+      "tech": [
+        "React",
+        "TypeScript",
+        "PostgreSQL",
+        "Supabase",
+        "Vite",
+        "Tailwind CSS",
+        "PWA"
+      ],
+      "highlights": [
+        "Follows 9 school textbooks across 7 subjects: 256 topics, 219 lessons and 1,232 practice questions, all marked as drafts until a teacher reviews them.",
+        "Timed practice papers that save every answer, resume after a refresh and submit exactly once at the deadline.",
+        "Offline-first PWA: finished work goes into a durable IndexedDB outbox with idempotency keys."
+      ],
+      "architecture": [
+        {
+          "layer": "Frontend",
+          "detail": "React + TypeScript single-page app built with Vite and Tailwind, with KaTeX maths in Markdown lessons."
+        },
+        {
+          "layer": "Learning rules",
+          "detail": "Pure, tested modules for answer checking, grading, mastery and exam attempts."
+        },
+        {
+          "layer": "Offline",
+          "detail": "PWA with an IndexedDB outbox and idempotency keys, so work is never lost or submitted twice."
+        },
+        {
+          "layer": "Backend",
+          "detail": "Supabase (PostgreSQL) with version-controlled migrations, row-level security and server-side grading."
+        },
+        {
+          "layer": "Hosting",
+          "detail": "Cloudflare Pages for the student site and a separate admin site."
+        }
+      ],
+      "links": {
+        "live": "https://studypilot-biw.pages.dev",
+        "github": "",
+        "demo": ""
+      },
+      "code_note": "Private repository. Code walkthrough available on request.",
+      "overview": [
+        "StudyPilot is a student-first learning website for Class 7 that follows the textbooks the school uses. Students read short lessons, practise questions with hints, take chapter unit tests and timed practice papers, and see what to revise next.",
+        "It is live as a prototype: sign-up and email verification work, and every lesson is clearly labelled as a draft until a teacher reviews it."
+      ],
+      "gallery": [
+        {
+          "src": "assets/projects/studypilot/home.webp",
+          "caption": "Live site: 9 textbooks, 256 topics and 1,232 practice questions, clearly marked as a prototype."
+        }
+      ],
+      "decisions": [
+        "Honest by design: every lesson shows its review status, simulated features are labelled, and the rule-based Study Buddy says it is not an AI model.",
+        "Grading runs on the server, and the database is protected with row-level security policies.",
+        "Mastery counts only answers right the first time without hints, so progress reflects real understanding."
+      ],
+      "results": [
+        "Live at studypilot-biw.pages.dev with working sign-up and email verification.",
+        "Test suite for logic, components, content integrity and database security, run before every commit."
+      ],
+      "featured": true
+    },
+    {
+      "name": "NIFTY / SENSEX Intraday Research Lab",
+      "category": "Quant Research",
+      "featured": true,
+      "summary": "Research workspace for intraday NIFTY / SENSEX trading: candle engines, feature and event discovery, walk-forward model tests and a paper-trading runtime.",
+      "tech": [
+        "Python",
+        "pandas",
+        "Machine Learning",
+        "Linux"
+      ],
+      "highlights": [
+        "Confidence-driven entry / exit research with walk-forward out-of-sample reporting, random baselines and cost sweeps.",
+        "Feature, event and edge discovery engines with FDR and Holm multiple-testing control.",
+        "Paper-trading runtime on a Linux server with a safety preflight before broker login."
+      ],
+      "links": {
+        "github": "",
+        "demo": ""
+      },
+      "slug": "intraday-research",
+      "code_note": "Private repository. Code walkthrough available on request.",
+      "overview": [
+        "A research workspace for intraday NIFTY and SENSEX trading. It rebuilds 30-second and 1-minute candles from raw ticks, engineers indicator features, and tests ideas with walk-forward, out-of-sample validation and explicit trading costs.",
+        "Negative results are reported plainly: most ideas fail once costs and multiple testing are accounted for, and the dashboards below show that."
+      ],
+      "architecture": [
+        {
+          "layer": "Data",
+          "detail": "Tick-to-candle reconstruction for 30s / 1m / 2m bars with schema, timestamp and sequence-gap guards."
+        },
+        {
+          "layer": "Features",
+          "detail": "Signed indicator votes, DI–TEMA crossover descriptors and 1,705 engineered features."
+        },
+        {
+          "layer": "Discovery",
+          "detail": "Feature, event and edge discovery engines with FDR / Holm correction and session bootstraps."
+        },
+        {
+          "layer": "Validation",
+          "detail": "Walk-forward and leave-one-day-out tests with random baselines and cost sweeps."
+        },
+        {
+          "layer": "Runtime",
+          "detail": "Paper-trading runtime on a Linux server with engine-health and latency monitoring."
+        }
+      ],
+      "gallery": [
+        {
+          "src": "assets/projects/intraday-research/phase3_dashboard.webp",
+          "caption": "Phase 3 alpha discovery: 1,705 features over 285 symbol-days, with walk-forward results net of a 5 bps option cost."
+        },
+        {
+          "src": "assets/projects/intraday-research/event_discovery_dashboard.webp",
+          "caption": "Event discovery: 30 candidate events tested out of sample with Holm correction and bootstrap intervals."
+        },
+        {
+          "src": "assets/projects/intraday-research/entry-model-comparison.webp",
+          "caption": "Entry models compared with leave-one-day-out walk-forward tests and a 1-point round-trip cost."
+        },
+        {
+          "src": "assets/projects/intraday-research/feature-redundancy-map.webp",
+          "caption": "Spearman redundancy map showing which top features describe the same motion."
+        },
+        {
+          "src": "assets/projects/intraday-research/edge-calibration.webp",
+          "caption": "Out-of-sample edge-score calibration on 11 unseen sessions."
+        }
+      ],
+      "decisions": [
+        "No-lookahead law: a decision at a bar uses only data up to that bar's close, enforced by asserts in the backtester.",
+        "Multiple-testing discipline: FDR and Holm corrections, session bootstraps and threshold perturbation before any result counts.",
+        "Costs first: every result is reported net of an explicit round-trip hurdle."
+      ],
+      "results": [
+        "Phase 3: 1,104 of 1,705 features passed FDR and stability filters, but the best out-of-sample result was −3.98 bps after costs, so no strategy was promoted.",
+        "Event discovery: 0 of 30 candidate events survived Holm-corrected validation on 11 out-of-sample sessions."
+      ]
+    },
+    {
+      "name": "LLS: Low-Latency Trading Infrastructure",
+      "category": "Low-Latency Systems",
+      "featured": false,
+      "summary": "C++20 platform for market-data ingestion, incremental feature computation, ML inference and risk / execution infrastructure.",
+      "tech": [
+        "C++20",
+        "CMake",
+        "Python",
+        "Machine Learning"
+      ],
+      "highlights": [
+        "Lock-free SPSC ring-buffer pipeline from feed to a preallocated market-state engine with zero-copy snapshots.",
+        "C++ ML stack: purged walk-forward splits, leakage detection, tree ensembles, TCN / CNN1D models, calibration and a zero-allocation inference engine.",
+        "Differential oracle proving the C++ port reproduces a legacy Python strategy exactly; 214 C++ source files and 98 test files."
+      ],
+      "architecture": [
+        {
+          "layer": "Core",
+          "detail": "Status / error types, strong IDs, structured logging, typed config, SPSC ring buffer, JSONL sinks, SHA-256."
+        },
+        {
+          "layer": "Market",
+          "detail": "Vendor-neutral instrument master, option-chain indexes and a multi-instrument market-state engine with freshness checks."
+        },
+        {
+          "layer": "Feed",
+          "detail": "Gated TrueData WebSocket transport, fixture replay, normalization and raw capture recording (market data only)."
+        },
+        {
+          "layer": "ML",
+          "detail": "Dataset construction, labelling, model registry, drift / shadow / replay validation and the inference runtime."
+        },
+        {
+          "layer": "Execution",
+          "detail": "Intent validation, risk gate, sizing, order state machine and reconciliation against a deterministic mock broker; real orders are disabled by design."
+        }
+      ],
+      "links": {
+        "github": "",
+        "demo": ""
+      },
+      "slug": "lls",
+      "code_note": "Private repository. Code walkthrough available on request.",
+      "overview": [
+        "A C++20 trading research and infrastructure platform built for deterministic, low-latency processing. It ingests market data, keeps a preallocated multi-instrument market state, computes features incrementally, runs ML inference without heap allocation, and has a complete risk and order-management architecture tested against a mock broker.",
+        "Real-money order routing is deliberately not implemented."
+      ],
+      "decisions": [
+        "Lock-free SPSC ring buffers and preallocated state so the hot path never blocks or allocates.",
+        "Differential oracle: the C++ port of a legacy Python strategy is checked against the original, with reference parameters pinned by SHA-256 so the comparison cannot drift.",
+        "Safety by construction: the broker boundary is an inert placeholder, and live trading cannot be armed by configuration.",
+        "Leakage-aware ML: purged walk-forward splits and explicit leakage detection before any model is trusted."
+      ],
+      "results": [
+        "214 C++ source files and 98 test files across unit, contract, failure, replay, performance and regression suites.",
+        "ASan / UBSan sanitizer builds and the full acceptance matrix certified on the reference host, with each phase documented in its own report."
+      ]
+    },
+    {
+      "name": "RQIE: Quant Intelligence Engine",
+      "category": "Quant Research",
+      "featured": false,
+      "summary": "Offline research engine with pre-registered experiments and a verified data store for NSE stock and option captures.",
+      "tech": [
+        "Python",
+        "pandas",
+        "DuckDB",
+        "Machine Learning"
+      ],
+      "highlights": [
+        "Pre-registered experiments on option-quote imbalance across 27 sessions, reporting a consistent but economically negligible effect honestly.",
+        "Gated data build with per-session verification and an independent DuckDB store audit.",
+        "Execution-economics attribution with a versioned cost model and delay stress tests; read-only by design with no broker capability."
+      ],
+      "links": {
+        "github": "",
+        "demo": ""
+      },
+      "slug": "rqie",
+      "code_note": "Private repository. Code walkthrough available on request.",
+      "overview": [
+        "RQIE (Raj Quant Intelligence Engine) is an offline research engine for NSE stock and option data. It turns raw captures into a verified data store, runs pre-registered experiments, and reports what the data actually supports, including when the answer is that there is no edge.",
+        "It has no broker or order capability, and that is enforced by tests."
+      ],
+      "architecture": [
+        {
+          "layer": "Data build",
+          "detail": "Gated canonical build from raw captures with per-session verification and benchmarks."
+        },
+        {
+          "layer": "Store audit",
+          "detail": "Partitioned store checked independently with DuckDB: row counts, sizes, ordering and orphan files."
+        },
+        {
+          "layer": "Experiments",
+          "detail": "Pre-registered hypotheses with frozen specifications and a separate confirmation stage."
+        },
+        {
+          "layer": "Economics",
+          "detail": "Execution-economics attribution with a versioned cost model and delay stress tests."
+        },
+        {
+          "layer": "Ledger",
+          "detail": "Owner decisions and approvals recorded in a research ledger."
+        }
+      ],
+      "decisions": [
+        "Pre-registration: hypotheses, horizons and the smallest effect of interest are fixed before new data is examined.",
+        "The cost model never defaults brokerage; results are reported net of explicit costs and latency.",
+        "Read-only by design: it reads historical data and writes only inside its own folder."
+      ],
+      "results": [
+        "Across 27 sessions, option-quote imbalance carried consistent but economically negligible information, so no executable edge was claimed.",
+        "Two quote-reversal features passed discovery but did not survive cost and delay stress; they await a frozen confirmation on new data."
+      ]
+    },
+    {
+      "name": "Audio / Visual Summarization",
+      "category": "AI & Automation",
+      "featured": false,
+      "summary": "Summarizes audio and video content to make information retrieval faster.",
+      "tech": [],
+      "highlights": [
+        "Won third place at the Saavishankar competition, 2024."
+      ],
+      "links": {
+        "github": "",
+        "demo": ""
+      },
+      "slug": "audio-visual-summarization"
+    }
+  ],
+  "experience": [
+    {
+      "company": "Tata Capital Housing Finance (TCHFL)",
+      "role": "Management Intern",
+      "start": "May 2024",
+      "end": "Jul 2024",
+      "location": "",
+      "highlights": [
+        "Automated MIS reports and built dashboards for senior management.",
+        "Audited P&L statements from GL files in Excel and analyzed key financial performance metrics and trends.",
+        "Benchmarked data against competitors and helped develop a CAPAD calculator to estimate total money saved on loans over the loan period."
+      ]
+    },
+    {
+      "company": "NTPC Ltd.",
+      "role": "Technical Intern",
+      "start": "May 2023",
+      "end": "Jul 2023",
+      "location": "",
+      "highlights": [
+        "Analyzed energy trade patterns in Power BI and SAP to evaluate a potential demerger of the renewable and coal businesses.",
+        "Contributed to the team's final report, after which the demerger idea was dropped."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "institution": "MPSTME, NMIMS Mumbai",
+      "degree": "MBA Tech: B.Tech Computer Engineering + MBA (Finance major, Business Intelligence & Analytics minor)",
+      "year": "2025",
+      "score": "CGPA 2.65 / 4",
+      "details": ""
+    }
+  ],
+  "certifications": [
+    "Trading Algorithms, Indian School of Business (Coursera)",
+    "Advanced Trading Algorithms, Indian School of Business (Coursera)",
+    "Investment and Portfolio Management, Rice University",
+    "Crash Course on Python, Google",
+    "Learn Python 3, Codecademy"
+  ],
+  "achievements": [
+    "Winner, Smart India Hackathon 2022",
+    "Finalist, Startup India: India's Social Impact Champion 2023",
+    "Third place, audio/video summarization, Saavishankar competition 2024"
+  ],
+  "interests": [
+    "Chess",
+    "Reading",
+    "Cycling"
+  ],
+  "generated_at": "2026-11-02 15:09"
+}

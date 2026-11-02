@@ -24,7 +24,7 @@ flowchart LR
 
     subgraph S3["3. LLM Engine"]
         F --> G["resume_tailor.py"]
-        H["master_resume.md<br/>(Alex Rivera)"] --> G
+        H["master_resume.md<br/>(from cv.json)"] --> G
         G -->|Zero-Hallucination Prompt| I["Gemini 2.5 Flash / OpenAI"]
         I --> J["Compile PDF in output/"]
     end
@@ -110,7 +110,11 @@ The codebase is strictly confined to `c:/Users/Light/Documents/antigravity/livel
 | [`sheet_manager.py`](sheet_manager.py) | Manages state & prevents duplicates. Reads & logs rows in Google Sheets or local fallback. | `gspread`, `google-auth` |
 | [`resume_tailor.py`](resume_tailor.py) | Tailors the master resume using a strict zero-hallucination system prompt. Exports PDF to `output/`. | `google-genai` (Gemini), `markdown-pdf` |
 | [`apply_bot.py`](apply_bot.py) | Automated application submission engine. Fills inputs with human typing delays, uploads PDFs, checks consent, handles CAPTCHA/questionnaires, and logs visual audit screenshots to `logs/screenshots/`. | Playwright (Async) |
-| [`master_resume.md`](master_resume.md) | Ground-truth candidate profile (**Alex Rivera**): C++, Numba, PyTorch, MetaTrader 5 & FlatTrade APIs. | Markdown |
+| [`master_resume.md`](master_resume.md) | Ground-truth resume for LLM tailoring, generated from `cv.json` (Portfolio tab → Copy CV into Master Resume). | Markdown |
+| [`cv.json`](cv.json) | Structured CV (profile, skills with levels, projects, experience, education) that drives the portfolio site and cold emails. | JSON |
+| [`portfolio_builder.py`](portfolio_builder.py) | Builds the public portfolio site in `portfolio/` from `cv.json` and compiles the CV PDF it links and emails attach. | `markdown-pdf` |
+| [`portfolio/`](portfolio/) | Static visual CV website: skill meters, skill → project filter, project cards, experience timeline. Deployable to GitHub Pages. | HTML5, CSS3, ES6 JavaScript |
+| [`cold_emailer.py`](cold_emailer.py) | Cold outreach engine: contacts, zero-hallucination email drafts, SMTP sending with CV attached, threaded follow-ups, reply detection, daily caps. | `smtplib`, `imaplib`, Gemini / OpenAI |
 
 ---
 
@@ -121,6 +125,41 @@ The codebase is strictly confined to `c:/Users/Light/Documents/antigravity/livel
 - **CAPTCHA & Questionnaire Detection**: Scans for Cloudflare Turnstile, reCAPTCHA, hCaptcha, or multi-stage quiz questionnaires. If detected, takes an audit screenshot in `logs/screenshots/`, marks the sheet row as `"Blocked - CAPTCHA / Questionnaire"`, and continues to the next job.
 - **Visual Audit Logging**: Full-page screenshots are saved for every attempt in `logs/screenshots/<job_slug>_<status>_<timestamp>.png`.
 - **Randomized Pacing Delay**: Pauses 30–90 seconds between applications to avoid bot detection and rate limits.
+
+---
+
+## 🌐 Portfolio Website (Visual CV)
+
+`cv.json` is the structured source of truth for your public CV. Edit it in the dashboard (**Portfolio & CV Website** tab) or by hand, then rebuild:
+
+```bash
+python portfolio_builder.py
+```
+
+This writes `portfolio/cv.json`, compiles `portfolio/resume.pdf`, and stamps the page title and link-preview tags. Every project with a `slug` also gets a case-study page (`project.html?p=<slug>`) built from its `overview`, `gallery` (images in `portfolio/assets/projects/<slug>/`), `architecture` (drawn as a flow or layer diagram), `decisions` and `results`. Preview locally at **[http://127.0.0.1:8000/portfolio/](http://127.0.0.1:8000/portfolio/)** while the dashboard runs.
+
+**Publish free on GitHub Pages:** push the `portfolio/` folder, then set **Settings → Pages → Source: GitHub Actions**. [`.github/workflows/portfolio.yml`](.github/workflows/portfolio.yml) redeploys on every change. Put the live URL in `profile.links.portfolio` so cold emails link to it. The phone number stays off the public site unless `profile.show_phone` is `true`.
+
+---
+
+## ✉️ Cold Email Outreach
+
+Add recruiters / hiring managers in the **Cold Outreach** tab (form or CSV with `name, email, company, role, job_url, notes`). Each outreach cycle:
+
+1. Checks your inbox over IMAP and marks anyone who replied as **Replied** (no more emails to them).
+2. Drafts a personal email for each new contact from `cv.json`, using the linked job's description when there is one. The LLM may only cite facts from your CV; with no API key a template is used.
+3. With auto-send on, sends first emails (CV PDF attached, the tailored resume when the contact is linked to a tracked job) and one threaded follow-up after `EMAIL_FOLLOWUP_DAYS`.
+
+Guardrails: `EMAIL_DAILY_LIMIT` per day, 60–180s random pacing, one first email per address, `EMAIL_MAX_FOLLOWUPS` follow-ups, a **Do not contact** status, and an opt-out line in every email.
+
+**Going live:** keep `EMAIL_DRY_RUN=true` first and read the previews in `output/emails/`. Then add a Gmail [App Password](https://myaccount.google.com/apppasswords) as `SMTP_APP_PASSWORD`, set `EMAIL_DRY_RUN=false`, and restart the dashboard.
+
+```bash
+python cold_emailer.py --import contacts.csv
+python cold_emailer.py --run-once            # drafts; sends too if EMAIL_AUTO_SEND=true
+python cold_emailer.py --daemon --interval 60
+python test_outreach.py                      # offline tests, never sends mail
+```
 
 ---
 

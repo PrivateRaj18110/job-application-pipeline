@@ -63,7 +63,7 @@ async def run_single_url_pipeline(
     print("=" * 80)
     print(f"[START] DIRECT TARGET PIPELINE: {target_url}")
     print(f"Auto-Submit : {'ENABLED' if auto_submit else 'DISABLED (Dry Run)'}")
-    print(f"Candidate   : Alex Rivera (Quantitative & ML Systems Engineer)")
+    print(f"Candidate   : {apply_bot.DEFAULT_APPLICANT['full_name']}")
     print("=" * 80)
 
     jobs = await scraper.scrape_jobs(target_url, max_jobs=max_jobs, headless=headless)
