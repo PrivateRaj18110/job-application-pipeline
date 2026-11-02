@@ -1,7 +1,7 @@
 # Raj Yadav
 **Python Backend & Applied AI Engineer**
 
-privateraj49@gmail.com | Mumbai, India | [GitHub](https://github.com/PrivateRaj18110)
+privateraj49@gmail.com | Mumbai, India | [Portfolio](https://privateraj18110.github.io/job-application-pipeline/) | [GitHub](https://github.com/PrivateRaj18110)
 
 MBA Tech (Finance) and Computer Engineering graduate from NMIMS Mumbai. I build end-to-end Python systems: FastAPI services, LLM-powered automation, event-driven platforms on Docker and Kubernetes, and rigorous quantitative research pipelines. Internships at Tata Capital and NTPC taught me the business side that the code serves.
 
