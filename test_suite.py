@@ -80,6 +80,25 @@ async def run_all_tests():
         print(f"  [PASS] Scraper returned {len(mock_jobs)} positions matching {keywords}:")
         for j in mock_jobs:
             print(f"         - {j['title']} @ {j['company']}")
+
+        # Title-based role matching: whole words only, seniority / intern titles excluded
+        settings = scheduler.load_targets_config().get("settings", {})
+        role_kw = settings.get("default_role_keywords", [])
+        excluded = settings.get("exclude_title_keywords", [])
+        for title in ("Applied AI Engineer", "Junior GenAI Engineer", "Python Backend Developer", "Software Engineer – AI/ML"):
+            assert scraper.matches_keywords(title, role_kw, excluded), f"Target role not matched: {title}"
+        for title in ("Email Marketing Specialist", "Senior Machine Learning Engineer", "Staff Backend Engineer",
+                      "Account Executive", "Machine Learning Intern"):
+            assert not scraper.matches_keywords(title, role_kw, excluded), f"Unwanted role matched: {title}"
+        print("  [PASS] Role matching accepts target titles and rejects senior / unrelated titles")
+
+        # Location filter: India or purely remote listings only
+        loc_filter = settings.get("location_filter")
+        for loc in ("Bengaluru, Karnataka, India", "Mumbai", "Remote", "Remote - APAC", "Remote (India)", ""):
+            assert scraper.location_allowed(loc, loc_filter), f"Allowed location rejected: {loc!r}"
+        for loc in ("San Francisco, CA", "San Francisco, CA | Remote-Friendly", "Remote, US", "London, UK", "Indianapolis, IN"):
+            assert not scraper.location_allowed(loc, loc_filter), f"Foreign location accepted: {loc!r}"
+        print("  [PASS] Location filter keeps India / remote roles and drops foreign ones")
         test_results["Scraper & Keyword Filtering"] = "PASSED"
     except Exception as e:
         print(f"  [FAIL] Scraper error: {e}")

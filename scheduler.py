@@ -229,10 +229,14 @@ async def run_single_cycle(
 
         target_name = target.get("name", "Target Board")
         target_url = target.get("url", "")
-        keywords = target.get("role_keywords", [])
+        # Targets without their own role_keywords inherit the shared list from settings
+        keywords = target.get("role_keywords") or settings.get("default_role_keywords", [])
+        exclude_keywords = settings.get("exclude_title_keywords", []) + target.get("exclude_keywords", [])
+        location_filter = target.get("location_filter", settings.get("location_filter"))
         target_type = target.get("type", "generic")
 
-        logger.info("\n>>> Scanning Target: %s (%s) [Keywords: %s]", target_name, target_url, keywords)
+        logger.info("\n>>> Scanning Target: %s (%s) [%d role keywords, %d excluded title words]",
+                    target_name, target_url, len(keywords), len(exclude_keywords))
         stats["targets_evaluated"] += 1
 
         if target_type == "mock":
@@ -243,6 +247,8 @@ async def run_single_cycle(
                 max_jobs=max_jobs_per_target,
                 role_keywords=keywords,
                 headless=headless,
+                exclude_keywords=exclude_keywords,
+                location_filter=location_filter,
             )
 
         stats["jobs_discovered"] += len(jobs)
